@@ -53,32 +53,45 @@ const REDIRECT_URI = process.env.REDIRECT_URI;
 // ======================
 // Monsters
 // ======================
+
 const monsters = [
-  { id: 1, name: "Zyprat", element: "Electro", rarity: "Common", attack: 45, defense: 30, hp: 60, image: "/monsters/flameling.png", weight: 70 },
-  { id: 2, name: "Ampfin", element: "Electro", rarity: "Common", attack: 35, defense: 40, hp: 65, image: "/monsters/aquabud.png", weight: 70 },
-  { id: 3, name: "Voltadillp", element: "Electro", rarity: "Common", attack: 55, defense: 50, hp: 80, image: "/monsters/terranox.png", weight: 70 },
-  { id: 4, name: "Sparklemoth", element: "Electro", rarity: "Common", attack: 70, defense: 45, hp: 75, image: "/monsters/zephyra.png", weight: 70 },
-  { id: 5, name: "Droplet", element: "Water", rarity: "Common", attack: 90, defense: 70, hp: 100, image: "/monsters/lumidrake.png", weight: 70 }
-  { id: 6, name: "Aquabud", element: "Water", rarity: "Common", attack: 45, defense: 30, hp: 60, image: "/monsters/flameling.png", weight: 70 },
-  { id: 7, name: "Coralume", element: "Water", rarity: "Common", attack: 35, defense: 40, hp: 65, image: "/monsters/aquabud.png", weight: 70 },
-  { id: 8, name: "Marishade", element: "Water", rarity: "Common", attack: 55, defense: 50, hp: 80, image: "/monsters/terranox.png", weight: 70 },
-  { id: 9, name: "Emberpup", element: "Fire", rarity: "Common", attack: 70, defense: 45, hp: 75, image: "/monsters/zephyra.png", weight: 70 },
-  { id: 10, name: "Moltenewt", element: "Fire", rarity: "Common", attack: 90, defense: 70, hp: 100, image: "/monsters/lumidrake.png", weight: 70 }
-  { id: 11, name: "Pyroo", element: "Fire", rarity: "Common", attack: 45, defense: 30, hp: 60, image: "/monsters/flameling.png", weight: 70 },
-  { id: 12, name: "Cindrill", element: "Fire", rarity: "Common", attack: 35, defense: 40, hp: 65, image: "/monsters/aquabud.png", weight: 70 },
-  { id: 13, name: "Frostooth", element: "Ice", rarity: "Common", attack: 55, defense: 50, hp: 80, image: "/monsters/terranox.png", weight: 70 },
-  { id: 14, name: "Glacirub", element: "Ice", rarity: "Common", attack: 70, defense: 45, hp: 75, image: "/monsters/zephyra.png", weight: 70 },
-  { id: 15, name: "Cryobot", element: "Ice", rarity: "Common", attack: 90, defense: 70, hp: 100, image: "/monsters/lumidrake.png", weight: 70 }
-  { id: 16, name: "Snowpuff", element: "Ice", rarity: "Common", attack: 45, defense: 30, hp: 60, image: "/monsters/flameling.png", weight: 70 },
-  { id: 17, name: "Budbun", element: "Plant", rarity: "Common", attack: 35, defense: 40, hp: 65, image: "/monsters/aquabud.png", weight: 70 },
-  { id: 18, name: "Leafup", element: "Plant", rarity: "Common", attack: 55, defense: 50, hp: 80, image: "/monsters/terranox.png", weight: 70 },
-  { id: 19, name: "Spineapple", element: "Plant", rarity: "Common", attack: 70, defense: 45, hp: 75, image: "/monsters/zephyra.png", weight: 70 },
-  { id: 20, name: "Vinemite", element: "Plant", rarity: "Common", attack: 90, defense: 70, hp: 100, image: "/monsters/lumidrake.png", weight: 70 }
-  { id: 21, name: "Terrabug", element: "Ground", rarity: "Common", attack: 45, defense: 30, hp: 60, image: "/monsters/flameling.png", weight: 70 },
-  { id: 22, name: "Rockling", element: "Ground", rarity: "Common", attack: 35, defense: 40, hp: 65, image: "/monsters/aquabud.png", weight: 70 },
-  { id: 23, name: "Mudpaw", element: "Ground", rarity: "Common", attack: 55, defense: 50, hp: 80, image: "/monsters/terranox.png", weight: 70 },
-  { id: 24, name: "Stonetail", element: "Ground", rarity: "Common", attack: 70, defense: 45, hp: 75, image: "/monsters/zephyra.png", weight: 70 },
+  // Electro
+  { id: 1, name: "Zyprat", element: "Electro", rarity: "Common", attack: 45, defense: 30, hp: 60, image: "/monsters/zyprat.png", weight: 70 },
+  { id: 2, name: "Ampfin", element: "Electro", rarity: "Common", attack: 35, defense: 40, hp: 65, image: "/monsters/ampfin.png", weight: 70 },
+  { id: 3, name: "Voltadillp", element: "Electro", rarity: "Common", attack: 55, defense: 50, hp: 80, image: "/monsters/voltadillp.png", weight: 70 },
+  { id: 4, name: "Sparklemoth", element: "Electro", rarity: "Common", attack: 70, defense: 45, hp: 75, image: "/monsters/sparklemoth.png", weight: 70 },
+
+  // Water
+  { id: 5, name: "Droplet", element: "Water", rarity: "Common", attack: 90, defense: 70, hp: 100, image: "/monsters/droplet.png", weight: 70 },
+  { id: 6, name: "Aquabud", element: "Water", rarity: "Common", attack: 45, defense: 30, hp: 60, image: "/monsters/aquabud.png", weight: 70 },
+  { id: 7, name: "Coralume", element: "Water", rarity: "Common", attack: 35, defense: 40, hp: 65, image: "/monsters/coralume.png", weight: 70 },
+  { id: 8, name: "Marishade", element: "Water", rarity: "Common", attack: 55, defense: 50, hp: 80, image: "/monsters/marishade.png", weight: 70 },
+
+  // Fire
+  { id: 9, name: "Emberpup", element: "Fire", rarity: "Common", attack: 70, defense: 45, hp: 75, image: "/monsters/emberpup.png", weight: 70 },
+  { id: 10, name: "Moltenewt", element: "Fire", rarity: "Common", attack: 90, defense: 70, hp: 100, image: "/monsters/moltenewt.png", weight: 70 },
+  { id: 11, name: "Pyroo", element: "Fire", rarity: "Common", attack: 45, defense: 30, hp: 60, image: "/monsters/pyroo.png", weight: 70 },
+  { id: 12, name: "Cindrill", element: "Fire", rarity: "Common", attack: 35, defense: 40, hp: 65, image: "/monsters/cindrill.png", weight: 70 },
+
+  // Ice
+  { id: 13, name: "Frostooth", element: "Ice", rarity: "Common", attack: 55, defense: 50, hp: 80, image: "/monsters/frostooth.png", weight: 70 },
+  { id: 14, name: "Glacirub", element: "Ice", rarity: "Common", attack: 70, defense: 45, hp: 75, image: "/monsters/glacirub.png", weight: 70 },
+  { id: 15, name: "Cryobot", element: "Ice", rarity: "Common", attack: 90, defense: 70, hp: 100, image: "/monsters/cryobot.png", weight: 70 },
+  { id: 16, name: "Snowpuff", element: "Ice", rarity: "Common", attack: 45, defense: 30, hp: 60, image: "/monsters/snowpuff.png", weight: 70 },
+
+  // Plant
+  { id: 17, name: "Budbun", element: "Plant", rarity: "Common", attack: 35, defense: 40, hp: 65, image: "/monsters/budbun.png", weight: 70 },
+  { id: 18, name: "Leafup", element: "Plant", rarity: "Common", attack: 55, defense: 50, hp: 80, image: "/monsters/leafup.png", weight: 70 },
+  { id: 19, name: "Spineapple", element: "Plant", rarity: "Common", attack: 70, defense: 45, hp: 75, image: "/monsters/spineapple.png", weight: 70 },
+  { id: 20, name: "Vinemite", element: "Plant", rarity: "Common", attack: 90, defense: 70, hp: 100, image: "/monsters/vinemite.png", weight: 70 },
+
+  // Ground
+  { id: 21, name: "Terrabug", element: "Ground", rarity: "Common", attack: 45, defense: 30, hp: 60, image: "/monsters/terrabug.png", weight: 70 },
+  { id: 22, name: "Rockling", element: "Ground", rarity: "Common", attack: 35, defense: 40, hp: 65, image: "/monsters/rockling.png", weight: 70 },
+  { id: 23, name: "Mudpaw", element: "Ground", rarity: "Common", attack: 55, defense: 50, hp: 80, image: "/monsters/mudpaw.png", weight: 70 },
+  { id: 24, name: "Stonetail", element: "Ground", rarity: "Common", attack: 70, defense: 45, hp: 75, image: "/monsters/stonetail.png", weight: 70 },
 ];
+
 
 function getRandomMonster() {
   const totalWeight = monsters.reduce((sum, m) => sum + m.weight, 0);
