@@ -29,6 +29,7 @@ app.listen(PORT, '0.0.0.0', () => console.log(`Server running on port ${PORT}`))
 
 app.use(cors());
 app.use(bodyParser.json());
+app.set('trust proxy', 1); // Needed for secure cookies behind HTTPS proxy (like Render)
 app.use(session({
   secret: process.env.SESSION_SECRET || 'default-secret',
   resave: false,
