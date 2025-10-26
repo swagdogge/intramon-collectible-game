@@ -55,6 +55,16 @@
 <div id="top-bar" style="display:none;">
   <span id="username-display"></span>
   <button id="check-inbox-btn">Check Inbox</button>
+  <div id="sort-controls" style="display: flex; align-items: center; gap: 10px;">
+  <label for="sort-select">Sort by:</label>
+  <select id="sort-select">
+    <option value="name">Name</option>
+    <option value="rarity">Rarity</option>
+    <option value="element">Element</option>
+  </select>
+  <button id="sort-order-btn" title="Toggle order">⬆️</button>
+</div>
+
 </div>
 
 <div id="monster-grid"></div>
@@ -90,7 +100,7 @@
 
 <script>
 const getRarityColor = (rarity) => {
-  switch(rarity?.toLowerCase()) {
+  switch (rarity?.toLowerCase()) {
     case 'common': return '#4CAF50';
     case 'rare': return '#2196F3';
     case 'epic': return '#9C27B0';
@@ -99,10 +109,22 @@ const getRarityColor = (rarity) => {
   }
 };
 
+const elementColors = {
+  Electro: '#FFD700',
+  Water: '#00BFFF',
+  Fire: '#FF4500',
+  Ice: '#00FFFF',
+  Plant: '#32CD32',
+  Ground: '#8B4513'
+};
+
+let allMonsters = [];
+let currentSort = { key: 'name', ascending: true };
+
 // --- Monster Modal ---
 const monsterModal = document.getElementById('monster-modal');
-function openMonsterModal(monster){
-  document.getElementById('modal-img').src = monster.image||'/monsters/placeholder.png';
+function openMonsterModal(monster) {
+  document.getElementById('modal-img').src = monster.image || '/monsters/placeholder.png';
   document.getElementById('modal-name').textContent = monster.name;
   document.getElementById('modal-rarity').textContent = monster.rarity.toUpperCase();
   document.getElementById('modal-rarity').style.color = getRarityColor(monster.rarity);
@@ -110,11 +132,48 @@ function openMonsterModal(monster){
   document.getElementById('modal-attack').textContent = monster.attack;
   document.getElementById('modal-defense').textContent = monster.defense;
   monsterModal.classList.add('show');
-  document.getElementById('gift-btn').onclick = ()=>giftMonster(monster);
+  document.getElementById('gift-btn').onclick = () => giftMonster(monster);
 }
-function closeMonsterModal(){ monsterModal.classList.remove('show'); }
-document.querySelector('#monster-modal .close-btn').addEventListener('click',closeMonsterModal);
-monsterModal.addEventListener('click', e=>{ if(e.target===monsterModal) closeMonsterModal(); });
+function closeMonsterModal() { monsterModal.classList.remove('show'); }
+document.querySelector('#monster-modal .close-btn').addEventListener('click', closeMonsterModal);
+monsterModal.addEventListener('click', e => { if (e.target === monsterModal) closeMonsterModal(); });
+
+// --- Render Monsters ---
+function renderMonsters(monsters) {
+  const gridEl = document.getElementById('monster-grid');
+  gridEl.innerHTML = '';
+
+  // Sort
+  const sorted = [...monsters].sort((a, b) => {
+    const dir = currentSort.ascending ? 1 : -1;
+    if (currentSort.key === 'rarity') {
+      const order = ['common', 'rare', 'epic', 'legendary'];
+      return (order.indexOf(a.rarity.toLowerCase()) - order.indexOf(b.rarity.toLowerCase())) * dir;
+    }
+    if (currentSort.key === 'element') {
+      if (a.element === b.element)
+        return a.name.localeCompare(b.name) * dir;
+      return a.element.localeCompare(b.element) * dir;
+    }
+    // Default: name
+    return a.name.localeCompare(b.name) * dir;
+  });
+
+  sorted.forEach(m => {
+    const card = document.createElement('div');
+    card.className = 'monster-card';
+    card.style.borderColor = getRarityColor(m.rarity);
+    card.innerHTML = `
+      <img src="${m.image || '/monsters/placeholder.png'}" 
+           alt="${m.name}" 
+           onerror="this.onerror=null;this.src='/monsters/placeholder.png';">
+      <h3 style="color:${elementColors[m.element] || '#555'}">${m.name}</h3>
+      <small>${m.rarity.toUpperCase()}</small>
+    `;
+    card.addEventListener('click', () => openMonsterModal(m));
+    gridEl.appendChild(card);
+  });
+}
 
 // --- Fetch Monsters ---
 async function fetchMonsters() {
@@ -122,53 +181,31 @@ async function fetchMonsters() {
     const res = await fetch('/my-monsters');
     if (!res.ok) return;
     const data = await res.json();
-    const gridEl = document.getElementById('monster-grid');
-    gridEl.innerHTML = '';
-
-    const elementColors = {
-      Electro: '#FFD700',
-      Water: '#00BFFF',
-      Fire: '#FF4500',
-      Ice: '#00FFFF',
-      Plant: '#32CD32',
-      Ground: '#8B4513'
-    };
-
-    data.monsters.forEach(m => {
-      const card = document.createElement('div');
-      card.className = 'monster-card';
-      card.style.borderColor = getRarityColor(m.rarity); // frame = rarity color
-      card.innerHTML = `
-        <img src="${m.image || '/monsters/placeholder.png'}" 
-             alt="${m.name}" 
-             onerror="this.onerror=null;this.src='/monsters/placeholder.png';">
-        <h3 style="color:${elementColors[m.element] || '#555'}">${m.name}</h3>
-        <small>${m.rarity.toUpperCase()}</small>
-      `;
-      card.addEventListener('click', () => openMonsterModal(m));
-      gridEl.appendChild(card);
-    });
-
+    allMonsters = data.monsters || [];
     document.getElementById('username-display').textContent = `Logged in as: ${data.name}`;
+    renderMonsters(allMonsters);
   } catch (err) {
     console.error('Failed to fetch mons:', err);
   }
 }
 
-
 // --- Gift Monster ---
-async function giftMonster(monster){
+async function giftMonster(monster) {
   const toUsername = prompt('Enter receiver username:');
-  if(!toUsername) return;
-  try{
+  if (!toUsername) return;
+  try {
     const userRes = await fetch(`/find-user/${toUsername}`);
     const userData = await userRes.json();
-    if(!userData.exists){ alert('User not found'); return; }
-    const res = await fetch('/gift',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({toPlayerId:userData.playerId,offeredMonsters:[monster]})});
+    if (!userData.exists) { alert('User not found'); return; }
+    const res = await fetch('/gift', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ toPlayerId: userData.playerId, offeredMonsters: [monster] })
+    });
     const result = await res.json();
-    if(res.ok){ alert('Monster sent to inbox!'); closeMonsterModal(); fetchMonsters(); }
-    else{ alert('Failed to gift: '+(result.error||'Unknown error')); }
-  }catch(err){ console.error(err); alert('Gift failed: '+err.message);}
+    if (res.ok) { alert('Monster sent to inbox!'); closeMonsterModal(); fetchMonsters(); }
+    else { alert('Failed to gift: ' + (result.error || 'Unknown error')); }
+  } catch (err) { console.error(err); alert('Gift failed: ' + err.message); }
 }
 
 // --- Inbox ---
@@ -181,62 +218,79 @@ const claimBtn = document.getElementById('claim-btn');
 
 let inboxQueue = [], currentInboxIndex = 0;
 
-async function checkInbox(){
-  try{
+async function checkInbox() {
+  try {
     const res = await fetch('/my-inbox');
-    if(!res.ok) throw new Error('Failed to fetch inbox');
+    if (!res.ok) throw new Error('Failed to fetch inbox');
     const data = await res.json();
-    if(!data.inbox.length){ alert('Inbox is empty :c'); return; }
+    if (!data.inbox.length) { alert('Inbox is empty :c'); return; }
     inboxQueue = data.inbox;
     currentInboxIndex = 0;
     showInbox(currentInboxIndex);
-  }catch(err){ console.error(err); alert(err.message); }
+  } catch (err) { console.error(err); alert(err.message); }
 }
 
-function showInbox(index){
-  if(index >= inboxQueue.length){ inboxModal.classList.remove('show'); inboxQueue=[]; currentInboxIndex=0; fetchMonsters(); return; }
+function showInbox(index) {
+  if (index >= inboxQueue.length) {
+    inboxModal.classList.remove('show'); inboxQueue = []; currentInboxIndex = 0; fetchMonsters(); return;
+  }
   const mon = inboxQueue[index];
-  inboxReason.textContent = `Reason: ${mon.reason==='eval'?'Evaluation':'Gift'}`;
+  inboxReason.textContent = `Reason: ${mon.reason === 'eval' ? 'Evaluation' : 'Gift'}`;
   inboxName.textContent = mon.name;
   inboxRarity.textContent = mon.rarity.toUpperCase();
   inboxRarity.style.color = getRarityColor(mon.rarity);
   inboxImg.src = mon.image || '/monsters/placeholder.png';
   inboxModal.classList.add('show');
 
-  claimBtn.onclick = async ()=>{
+  claimBtn.onclick = async () => {
     await claimMonster(mon.instanceId);
   };
 }
 
-async function claimMonster(instanceId){
-  try{
-    const res = await fetch(`/claim/${instanceId}`,{ method:'POST' });
-    if(!res.ok) throw new Error('Claim failed');
+async function claimMonster(instanceId) {
+  try {
+    const res = await fetch(`/claim/${instanceId}`, { method: 'POST' });
+    if (!res.ok) throw new Error('Claim failed');
     currentInboxIndex++;
     showInbox(currentInboxIndex);
-  }catch(err){ console.error(err); alert(err.message); }
+  } catch (err) { console.error(err); alert(err.message); }
 }
 
-inboxModal.querySelector('.close-btn').addEventListener('click',()=>{
-  inboxModal.classList.remove('show'); inboxQueue=[]; currentInboxIndex=0;
+inboxModal.querySelector('.close-btn').addEventListener('click', () => {
+  inboxModal.classList.remove('show'); inboxQueue = []; currentInboxIndex = 0;
   fetchMonsters();
 });
+document.getElementById('check-inbox-btn').addEventListener('click', checkInbox);
 
-document.getElementById('check-inbox-btn').addEventListener('click',checkInbox);
+// --- Sort Controls ---
+const sortSelect = document.getElementById('sort-select');
+const sortOrderBtn = document.getElementById('sort-order-btn');
+
+sortSelect.addEventListener('change', () => {
+  currentSort.key = sortSelect.value;
+  renderMonsters(allMonsters);
+});
+
+sortOrderBtn.addEventListener('click', () => {
+  currentSort.ascending = !currentSort.ascending;
+  sortOrderBtn.textContent = currentSort.ascending ? '⬆️' : '⬇️';
+  renderMonsters(allMonsters);
+});
 
 // --- Login / Init ---
-document.getElementById('login-btn').addEventListener('click',()=>window.location.href='/login');
+document.getElementById('login-btn').addEventListener('click', () => window.location.href = '/login');
 
-(async function init(){
-  try{
-    const res=await fetch('/my-monsters');
-    if(res.ok){ 
-      document.getElementById('login-btn').style.display='none'; 
-      document.getElementById('top-bar').style.display='flex'; 
-      fetchMonsters(); 
+(async function init() {
+  try {
+    const res = await fetch('/my-monsters');
+    if (res.ok) {
+      document.getElementById('login-btn').style.display = 'none';
+      document.getElementById('top-bar').style.display = 'flex';
+      fetchMonsters();
     }
-  }catch(err){ console.log('Not logged in'); }
+  } catch (err) { console.log('Not logged in'); }
 })();
 </script>
+
 </body>
 </html>
