@@ -144,12 +144,18 @@ app.get('/oauth/callback', async (req, res) => {
       headers: { Authorization: `Bearer ${accessToken}` }
     });
 
-    for (let e of evalRes.data) {
-      if (playerData.grantedEvaluations.includes(e.id)) continue;
-      const newMonster = getRandomMonster();
-      playerData.monsters.push({ ...newMonster, instanceId: `${newMonster.id}-${Date.now()}-${Math.floor(Math.random()*10000)}` });
-      playerData.grantedEvaluations.push(e.id);
-    }
+// Grant monsters for new evaluations
+for (let e of evalRes.data) {
+  if (playerData.grantedEvaluations.includes(e.id)) continue;
+  const newMonster = getRandomMonster();
+  playerData.inbox.push({ 
+    ...newMonster, 
+    instanceId: `${newMonster.id}-${Date.now()}-${Math.floor(Math.random()*10000)}`,
+    reason: 'eval'
+  });
+  playerData.grantedEvaluations.push(e.id);
+}
+
 
     await playerRef.set(playerData);
     res.redirect(`/index.html?userId=${userRes.data.id}`);
@@ -199,52 +205,70 @@ app.post('/gift', async (req, res) => {
       const fromData = fromDoc.data();
       if (!fromData.monsters.some(m => m.instanceId === monster.instanceId)) throw new Error('Monster not owned');
 
+      // Remove monster from sender's claimed monsters
       fromData.monsters = fromData.monsters.filter(m => m.instanceId !== monster.instanceId);
+
+      // Add monster to recipient's inbox with reason "gift"
       const toData = toDoc.data();
-      toData.monsters.push(monster);
+      toData.inbox = toData.inbox || [];
+      toData.inbox.push({ ...monster, reason: 'gift' });
 
       t.update(fromRef, { monsters: fromData.monsters });
-      t.update(toRef, { monsters: toData.monsters });
-
-      const giftRef = db.collection('gifts').doc();
-      t.set(giftRef, { from: fromPlayerId, to: toPlayerId, monster, timestamp: admin.firestore.FieldValue.serverTimestamp() });
+      t.update(toRef, { inbox: toData.inbox });
     });
 
-    res.json({ message: 'Monster successfully gifted!' });
+    res.json({ message: 'Monster sent to inbox!' });
   } catch(err) {
     console.error(err);
     res.status(500).json({ error: err.message });
   }
 });
 
-// Fetch gifts
-app.get('/my-gifts', async (req,res) => {
+//claim
+
+app.post('/claim/:instanceId', async (req,res) => {
+  const playerId = req.session.playerId;
+  if(!playerId) return res.status(401).json({ error: 'Not logged in' });
+
+  const { instanceId } = req.params;
+  try {
+    const playerRef = db.collection('players').doc(playerId);
+    await db.runTransaction(async t => {
+      const doc = await t.get(playerRef);
+      if(!doc.exists) throw new Error('Player not found');
+
+      const data = doc.data();
+      const monsterIndex = data.inbox?.findIndex(m => m.instanceId === instanceId);
+      if(monsterIndex === -1) throw new Error('Monster not in inbox');
+
+      const [monster] = data.inbox.splice(monsterIndex, 1);
+      data.monsters = data.monsters || [];
+      data.monsters.push(monster);
+
+      t.update(playerRef, { inbox: data.inbox, monsters: data.monsters });
+    });
+
+    res.json({ message: 'Monster claimed!' });
+  } catch(err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
+//inbox
+
+app.get('/my-inbox', async (req, res) => {
   const playerId = req.session.playerId;
   if(!playerId) return res.status(401).json({ error: 'Not logged in' });
 
   try {
-    const snapshot = await db.collection('gifts')
-      .where('to','==',playerId)
-      .orderBy('timestamp','desc')
-      .limit(10)
-      .get();
+    const playerRef = db.collection('players').doc(playerId);
+    const playerDoc = await playerRef.get();
+    if(!playerDoc.exists) return res.status(404).json({ error: 'Player not found' });
 
-    const gifts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    res.json(gifts);
-  } catch(err) {
-    console.error(err);
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// Delete gift
-app.delete('/gift/:giftId', async (req,res) => {
-  const { giftId } = req.params;
-  if(!giftId) return res.status(400).json({ error: 'Missing gift ID' });
-
-  try {
-    await db.collection('gifts').doc(giftId).delete();
-    res.json({ message: 'Gift removed' });
+    const playerData = playerDoc.data();
+    res.json({ inbox: playerData.inbox || [] });
   } catch(err) {
     console.error(err);
     res.status(500).json({ error: err.message });

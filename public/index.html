@@ -54,7 +54,7 @@
 
 <div id="top-bar" style="display:none;">
   <span id="username-display"></span>
-  <button id="check-gifts-btn">Check Gifts</button>
+  <button id="check-inbox-btn">Check Inbox</button>
 </div>
 
 <div id="monster-grid"></div>
@@ -76,15 +76,15 @@
   </div>
 </div>
 
-<!-- Gift Modal -->
-<div id="gift-modal" class="modal">
+<!-- Inbox Modal -->
+<div id="inbox-modal" class="modal">
   <div class="modal-content">
     <span class="close-btn">&times;</span>
-    <h3 id="gift-from"></h3>
-    <img id="gift-img" src="" alt="Gift Monster">
-    <h2 id="gift-name"></h2>
-    <small id="gift-rarity"></small>
-    <button id="gift-next-btn">Next</button>
+    <h3 id="inbox-reason"></h3>
+    <img id="inbox-img" src="" alt="Inbox Monster">
+    <h2 id="inbox-name"></h2>
+    <small id="inbox-rarity"></small>
+    <button id="claim-btn">Claim Monster</button>
   </div>
 </div>
 
@@ -139,64 +139,71 @@ async function fetchMonsters(){
 
 // --- Gift Monster ---
 async function giftMonster(monster){
-  const toUsername = prompt('Enter reciever username:');
+  const toUsername = prompt('Enter receiver username:');
   if(!toUsername) return;
   try{
     const userRes = await fetch(`/find-user/${toUsername}`);
     const userData = await userRes.json();
-    if(!userData.exists){ alert('X User not found X'); return; }
+    if(!userData.exists){ alert('User not found'); return; }
     const res = await fetch('/gift',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({toPlayerId:userData.playerId,offeredMonsters:[monster]})});
     const result = await res.json();
-    if(res.ok){ alert('Gift sent :D'); closeMonsterModal(); fetchMonsters(); }
-    else{ alert('X Failed to gift X'+(result.error||'Unknown error')); }
-  }catch(err){console.error(err); alert('X Gift failed X'+err.message);}
+    if(res.ok){ alert('Monster sent to inbox!'); closeMonsterModal(); fetchMonsters(); }
+    else{ alert('Failed to gift: '+(result.error||'Unknown error')); }
+  }catch(err){ console.error(err); alert('Gift failed: '+err.message);}
 }
 
-// --- Gifts Carousel ---
-const giftModal=document.getElementById('gift-modal');
-const giftFrom=document.getElementById('gift-from');
-const giftImg=document.getElementById('gift-img');
-const giftName=document.getElementById('gift-name');
-const giftRarity=document.getElementById('gift-rarity');
-const giftNextBtn=document.getElementById('gift-next-btn');
-let giftsQueue=[],currentGiftIndex=0;
+// --- Inbox ---
+const inboxModal = document.getElementById('inbox-modal');
+const inboxReason = document.getElementById('inbox-reason');
+const inboxImg = document.getElementById('inbox-img');
+const inboxName = document.getElementById('inbox-name');
+const inboxRarity = document.getElementById('inbox-rarity');
+const claimBtn = document.getElementById('claim-btn');
 
-async function checkGifts(){
+let inboxQueue = [], currentInboxIndex = 0;
+
+async function checkInbox(){
   try{
-    const res=await fetch('/my-gifts');
-    if(!res.ok)throw new Error('X Failed to fetch gifts X');
-    const gifts=await res.json();
-    if(!gifts.length){ alert('No new gifts right now :c'); return; }
-    giftsQueue=gifts; currentGiftIndex=0; showGift(currentGiftIndex);
-  }catch(err){console.error(err); alert('X Failed to check gifts X'+err.message);}
+    const res = await fetch('/my-inbox');
+    if(!res.ok) throw new Error('Failed to fetch inbox');
+    const data = await res.json();
+    if(!data.inbox.length){ alert('Inbox is empty :c'); return; }
+    inboxQueue = data.inbox;
+    currentInboxIndex = 0;
+    showInbox(currentInboxIndex);
+  }catch(err){ console.error(err); alert(err.message); }
 }
 
-function showGift(index){
-  if(index>=giftsQueue.length){ giftModal.classList.remove('show'); giftsQueue=[]; currentGiftIndex=0; fetchMonsters(); return; }
-  const gift=giftsQueue[index];
-  giftFrom.textContent=`From: ${gift.from||'Unknown'}`;
-  giftName.textContent=gift.monster?.name||'Unnamed Monster';
-  giftRarity.textContent=gift.monster?.rarity||'';
-  giftRarity.style.color=getRarityColor(gift.monster?.rarity||'');
-  giftImg.src=gift.monster?.image||'/monsters/placeholder.png';
-  giftImg.onerror=()=>{giftImg.src='/monsters/placeholder.png';};
-  giftModal.classList.add('show');
+function showInbox(index){
+  if(index >= inboxQueue.length){ inboxModal.classList.remove('show'); inboxQueue=[]; currentInboxIndex=0; fetchMonsters(); return; }
+  const mon = inboxQueue[index];
+  inboxReason.textContent = `Reason: ${mon.reason==='eval'?'Evaluation':'Gift'}`;
+  inboxName.textContent = mon.name;
+  inboxRarity.textContent = mon.rarity.toUpperCase();
+  inboxRarity.style.color = getRarityColor(mon.rarity);
+  inboxImg.src = mon.image || '/monsters/placeholder.png';
+  inboxModal.classList.add('show');
+
+  claimBtn.onclick = async ()=>{
+    await claimMonster(mon.instanceId);
+  };
 }
 
-// Remove gift from Firestore
-async function removeGift(gift){ if(!gift.id) return; await fetch(`/gift/${gift.id}`,{method:'DELETE'}); }
+async function claimMonster(instanceId){
+  try{
+    const res = await fetch(`/claim/${instanceId}`,{ method:'POST' });
+    if(!res.ok) throw new Error('Claim failed');
+    currentInboxIndex++;
+    showInbox(currentInboxIndex);
+  }catch(err){ console.error(err); alert(err.message); }
+}
 
-giftNextBtn.addEventListener('click', async ()=>{
-  await removeGift(giftsQueue[currentGiftIndex]);
-  currentGiftIndex++; showGift(currentGiftIndex);
+inboxModal.querySelector('.close-btn').addEventListener('click',()=>{
+  inboxModal.classList.remove('show'); inboxQueue=[]; currentInboxIndex=0;
+  fetchMonsters();
 });
 
-giftModal.querySelector('.close-btn').addEventListener('click', async ()=>{
-  for(let i=currentGiftIndex;i<giftsQueue.length;i++) await removeGift(giftsQueue[i]);
-  giftModal.classList.remove('show'); giftsQueue=[]; currentGiftIndex=0; fetchMonsters();
-});
-
-document.getElementById('check-gifts-btn').addEventListener('click',checkGifts);
+document.getElementById('check-inbox-btn').addEventListener('click',checkInbox);
 
 // --- Login / Init ---
 document.getElementById('login-btn').addEventListener('click',()=>window.location.href='/login');
@@ -204,7 +211,11 @@ document.getElementById('login-btn').addEventListener('click',()=>window.locatio
 (async function init(){
   try{
     const res=await fetch('/my-monsters');
-    if(res.ok){ document.getElementById('login-btn').style.display='none'; document.getElementById('top-bar').style.display='flex'; fetchMonsters(); }
+    if(res.ok){ 
+      document.getElementById('login-btn').style.display='none'; 
+      document.getElementById('top-bar').style.display='flex'; 
+      fetchMonsters(); 
+    }
   }catch(err){ console.log('Not logged in'); }
 })();
 </script>
