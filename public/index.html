@@ -117,25 +117,44 @@ document.querySelector('#monster-modal .close-btn').addEventListener('click',clo
 monsterModal.addEventListener('click', e=>{ if(e.target===monsterModal) closeMonsterModal(); });
 
 // --- Fetch Monsters ---
-async function fetchMonsters(){
-  try{
+async function fetchMonsters() {
+  try {
     const res = await fetch('/my-monsters');
-    if(!res.ok) return;
+    if (!res.ok) return;
     const data = await res.json();
     const gridEl = document.getElementById('monster-grid');
-    gridEl.innerHTML='';
-    data.monsters.forEach(m=>{
-      const card=document.createElement('div');
-      card.className='monster-card';
-      card.style.borderColor=getRarityColor(m.rarity);
-      card.innerHTML=`<img src="${m.image||'/monsters/placeholder.png'}" alt="${m.name}" onerror="this.onerror=null;this.src='/monsters/placeholder.png';">
-      <h3 style="color:${getRarityColor(m.rarity)}">${m.name}</h3><small>${m.rarity.toUpperCase()}</small>`;
-      card.addEventListener('click',()=>openMonsterModal(m));
+    gridEl.innerHTML = '';
+
+    const elementColors = {
+      Electro: '#FFD700',
+      Water: '#00BFFF',
+      Fire: '#FF4500',
+      Ice: '#00FFFF',
+      Plant: '#32CD32',
+      Ground: '#8B4513'
+    };
+
+    data.monsters.forEach(m => {
+      const card = document.createElement('div');
+      card.className = 'monster-card';
+      card.style.borderColor = getRarityColor(m.rarity); // frame = rarity color
+      card.innerHTML = `
+        <img src="${m.image || '/monsters/placeholder.png'}" 
+             alt="${m.name}" 
+             onerror="this.onerror=null;this.src='/monsters/placeholder.png';">
+        <h3 style="color:${elementColors[m.element] || '#555'}">${m.name}</h3>
+        <small>${m.rarity.toUpperCase()}</small>
+      `;
+      card.addEventListener('click', () => openMonsterModal(m));
       gridEl.appendChild(card);
     });
-    document.getElementById('username-display').textContent=`Logged in as: ${data.name}`;
-  }catch(err){console.error('Failed to fetch mons:',err);}
+
+    document.getElementById('username-display').textContent = `Logged in as: ${data.name}`;
+  } catch (err) {
+    console.error('Failed to fetch mons:', err);
+  }
 }
+
 
 // --- Gift Monster ---
 async function giftMonster(monster){
