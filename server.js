@@ -114,17 +114,27 @@ app.get('/login', (req, res) => {
 });
 
 // OAuth callback
+// OAuth callback
 app.get('/oauth/callback', async (req, res) => {
   const code = req.query.code;
   try {
-    const tokenRes = await axios.post('https://api.intra.42.fr/oauth/token',
-      qs.stringify({ grant_type: 'authorization_code', client_id: CLIENT_ID, client_secret: CLIENT_SECRET, code, redirect_uri: REDIRECT_URI }),
+    // 1️⃣ Exchange code for access token
+    const tokenRes = await axios.post(
+      'https://api.intra.42.fr/oauth/token',
+      qs.stringify({
+        grant_type: 'authorization_code',
+        client_id: CLIENT_ID,
+        client_secret: CLIENT_SECRET,
+        code,
+        redirect_uri: REDIRECT_URI
+      }),
       { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
     );
 
     const accessToken = tokenRes.data.access_token;
     req.session.accessToken = accessToken;
 
+    // 2️⃣ Fetch user info
     const userRes = await axios.get('https://api.intra.42.fr/v2/me', {
       headers: { Authorization: `Bearer ${accessToken}` }
     });
@@ -134,37 +144,52 @@ app.get('/oauth/callback', async (req, res) => {
     req.session.playerId = playerId;
     req.session.username = playerName;
 
-    // Fetch or create player
+    // 3️⃣ Fetch or create player data
     const playerRef = db.collection('players').doc(playerId);
     const playerDoc = await playerRef.get();
-    let playerData = playerDoc.exists ? playerDoc.data() : { name: playerName, monsters: [], grantedEvaluations: [] };
 
-    // Grant monsters for new evaluations
-    const evalRes = await axios.get(`https://api.intra.42.fr/v2/users/${userRes.data.id}/scale_teams/as_corrector`, {
-      headers: { Authorization: `Bearer ${accessToken}` }
-    });
+    let playerData = playerDoc.exists
+      ? playerDoc.data()
+      : {
+          name: playerName,
+          monsters: [],
+          inbox: [],
+          grantedEvaluations: []
+        };
 
-// Grant monsters for new evaluations
-for (let e of evalRes.data) {
-  if (playerData.grantedEvaluations.includes(e.id)) continue;
-  const newMonster = getRandomMonster();
-  playerData.inbox.push({ 
-    ...newMonster, 
-    instanceId: `${newMonster.id}-${Date.now()}-${Math.floor(Math.random()*10000)}`,
-    reason: 'eval'
-  });
-  playerData.grantedEvaluations.push(e.id);
-}
+    // Ensure inbox exists (for existing players too)
+    playerData.inbox = playerData.inbox || [];
+    playerData.monsters = playerData.monsters || [];
+    playerData.grantedEvaluations = playerData.grantedEvaluations || [];
 
+    // 4️⃣ Grant monsters for new evaluations
+    const evalRes = await axios.get(
+      `https://api.intra.42.fr/v2/users/${userRes.data.id}/scale_teams/as_corrector`,
+      { headers: { Authorization: `Bearer ${accessToken}` } }
+    );
 
+    for (let e of evalRes.data) {
+      if (playerData.grantedEvaluations.includes(e.id)) continue;
+      const newMonster = getRandomMonster();
+      playerData.inbox.push({
+        ...newMonster,
+        instanceId: `${newMonster.id}-${Date.now()}-${Math.floor(Math.random() * 10000)}`,
+        reason: 'eval'
+      });
+      playerData.grantedEvaluations.push(e.id);
+    }
+
+    // 5️⃣ Save player data back to Firestore
     await playerRef.set(playerData);
-    res.redirect(`/index.html?userId=${userRes.data.id}`);
 
-  } catch(err) {
+    // 6️⃣ Redirect to frontend
+    res.redirect(`/index.html?userId=${userRes.data.id}`);
+  } catch (err) {
     console.error('OAuth error:', err.response?.data || err.message);
     res.status(500).send('OAuth failed');
   }
 });
+
 
 // Get player's monsters
 app.get('/my-monsters', async (req, res) => {
