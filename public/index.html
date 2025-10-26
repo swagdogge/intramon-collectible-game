@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Intramon</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(180deg, #ffffff, #ffffff52);
+      margin: 0; padding: 20px; text-align: center;
+    }
+    h1 { color: #5f5f5f; text-shadow: 1px 1px 3px rgba(0,0,0,0.2); }
+    #top-bar {
+      display: flex; justify-content: space-between; align-items: center;
+      background: rgba(255,255,255,0.8);
+      padding: 10px 20px; border-radius: 12px; margin-bottom: 20px;
+      max-width: 800px; margin-left:auto; margin-right:auto;
+    }
+    #monster-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 20px; padding: 20px; max-width: 800px; margin: 0 auto;
+    }
+    .monster-card {
+      background: rgba(255,255,255,0.9); border-radius: 15px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+      padding: 15px; cursor: pointer; border: 3px solid transparent;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .monster-card:hover {
+      transform: scale(1.05); box-shadow: 0 6px 15px rgba(0,0,0,0.3);
+    }
+    .monster-card img { width: 100px; height: 100px; object-fit: contain; margin-bottom: 10px; }
+    button {
+      margin-top: 10px; padding: 10px 20px; font-size: 14px;
+      border: none; background-color: #802200; color: white; border-radius: 8px;
+      cursor: pointer; transition: background 0.2s;
+    }
+    button:hover { background-color: #e03e00; }
+    /* Modals */
+    .modal { display:none; position: fixed; top:0; left:0; width:100%; height:100%;
+      background: rgba(0,0,0,0.5); justify-content:center; align-items:center; z-index:999; }
+    .modal.show { display:flex; }
+    .modal-content {
+      background: white; border-radius:15px; padding:25px; width:320px;
+      text-align:center; position: relative; box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+    }
+    .modal-content img { width:150px; height:150px; object-fit:contain; margin-bottom:15px; }
+    .close-btn { position:absolute; top:10px; right:15px; font-size:22px; cursor:pointer; }
+    .stats p { margin:5px 0; }
+  </style>
+</head>
+<body>
+<h1>Intramon</h1>
+
+<div id="top-bar" style="display:none;">
+  <span id="username-display"></span>
+  <button id="check-gifts-btn">Check Gifts</button>
+</div>
+
+<div id="monster-grid"></div>
+<button id="login-btn">Login via 42</button>
+
+<!-- Monster Modal -->
+<div id="monster-modal" class="modal">
+  <div class="modal-content">
+    <span class="close-btn">&times;</span>
+    <img id="modal-img" src="" alt="Monster">
+    <h2 id="modal-name"></h2>
+    <small id="modal-rarity"></small>
+    <div class="stats">
+      <p><b>HP:</b> <span id="modal-hp"></span></p>
+      <p><b>Attack:</b> <span id="modal-attack"></span></p>
+      <p><b>Defense:</b> <span id="modal-defense"></span></p>
+    </div>
+    <button id="gift-btn">Gift to Player</button>
+  </div>
+</div>
+
+<!-- Gift Modal -->
+<div id="gift-modal" class="modal">
+  <div class="modal-content">
+    <span class="close-btn">&times;</span>
+    <h3 id="gift-from"></h3>
+    <img id="gift-img" src="" alt="Gift Monster">
+    <h2 id="gift-name"></h2>
+    <small id="gift-rarity"></small>
+    <button id="gift-next-btn">Next</button>
+  </div>
+</div>
+
+<script>
+const getRarityColor = (rarity) => {
+  switch(rarity?.toLowerCase()) {
+    case 'common': return '#4CAF50';
+    case 'rare': return '#2196F3';
+    case 'epic': return '#9C27B0';
+    case 'legendary': return '#FF9800';
+    default: return '#555';
+  }
+};
+
+// --- Monster Modal ---
+const monsterModal = document.getElementById('monster-modal');
+function openMonsterModal(monster){
+  document.getElementById('modal-img').src = monster.image||'/monsters/placeholder.png';
+  document.getElementById('modal-name').textContent = monster.name;
+  document.getElementById('modal-rarity').textContent = monster.rarity.toUpperCase();
+  document.getElementById('modal-rarity').style.color = getRarityColor(monster.rarity);
+  document.getElementById('modal-hp').textContent = monster.hp;
+  document.getElementById('modal-attack').textContent = monster.attack;
+  document.getElementById('modal-defense').textContent = monster.defense;
+  monsterModal.classList.add('show');
+  document.getElementById('gift-btn').onclick = ()=>giftMonster(monster);
+}
+function closeMonsterModal(){ monsterModal.classList.remove('show'); }
+document.querySelector('#monster-modal .close-btn').addEventListener('click',closeMonsterModal);
+monsterModal.addEventListener('click', e=>{ if(e.target===monsterModal) closeMonsterModal(); });
+
+// --- Fetch Monsters ---
+async function fetchMonsters(){
+  try{
+    const res = await fetch('/my-monsters');
+    if(!res.ok) return;
+    const data = await res.json();
+    const gridEl = document.getElementById('monster-grid');
+    gridEl.innerHTML='';
+    data.monsters.forEach(m=>{
+      const card=document.createElement('div');
+      card.className='monster-card';
+      card.style.borderColor=getRarityColor(m.rarity);
+      card.innerHTML=`<img src="${m.image||'/monsters/placeholder.png'}" alt="${m.name}" onerror="this.onerror=null;this.src='/monsters/placeholder.png';">
+      <h3 style="color:${getRarityColor(m.rarity)}">${m.name}</h3><small>${m.rarity.toUpperCase()}</small>`;
+      card.addEventListener('click',()=>openMonsterModal(m));
+      gridEl.appendChild(card);
+    });
+    document.getElementById('username-display').textContent=`Logged in as: ${data.name}`;
+  }catch(err){console.error('Failed to fetch mons:',err);}
+}
+
+// --- Gift Monster ---
+async function giftMonster(monster){
+  const toUsername = prompt('Enter reciever username:');
+  if(!toUsername) return;
+  try{
+    const userRes = await fetch(`/find-user/${toUsername}`);
+    const userData = await userRes.json();
+    if(!userData.exists){ alert('X User not found X'); return; }
+    const res = await fetch('/gift',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({toPlayerId:userData.playerId,offeredMonsters:[monster]})});
+    const result = await res.json();
+    if(res.ok){ alert('Gift sent :D'); closeMonsterModal(); fetchMonsters(); }
+    else{ alert('X Failed to gift X'+(result.error||'Unknown error')); }
+  }catch(err){console.error(err); alert('X Gift failed X'+err.message);}
+}
+
+// --- Gifts Carousel ---
+const giftModal=document.getElementById('gift-modal');
+const giftFrom=document.getElementById('gift-from');
+const giftImg=document.getElementById('gift-img');
+const giftName=document.getElementById('gift-name');
+const giftRarity=document.getElementById('gift-rarity');
+const giftNextBtn=document.getElementById('gift-next-btn');
+let giftsQueue=[],currentGiftIndex=0;
+
+async function checkGifts(){
+  try{
+    const res=await fetch('/my-gifts');
+    if(!res.ok)throw new Error('X Failed to fetch gifts X');
+    const gifts=await res.json();
+    if(!gifts.length){ alert('No new gifts right now :c'); return; }
+    giftsQueue=gifts; currentGiftIndex=0; showGift(currentGiftIndex);
+  }catch(err){console.error(err); alert('X Failed to check gifts X'+err.message);}
+}
+
+function showGift(index){
+  if(index>=giftsQueue.length){ giftModal.classList.remove('show'); giftsQueue=[]; currentGiftIndex=0; fetchMonsters(); return; }
+  const gift=giftsQueue[index];
+  giftFrom.textContent=`From: ${gift.from||'Unknown'}`;
+  giftName.textContent=gift.monster?.name||'Unnamed Monster';
+  giftRarity.textContent=gift.monster?.rarity||'';
+  giftRarity.style.color=getRarityColor(gift.monster?.rarity||'');
+  giftImg.src=gift.monster?.image||'/monsters/placeholder.png';
+  giftImg.onerror=()=>{giftImg.src='/monsters/placeholder.png';};
+  giftModal.classList.add('show');
+}
+
+// Remove gift from Firestore
+async function removeGift(gift){ if(!gift.id) return; await fetch(`/gift/${gift.id}`,{method:'DELETE'}); }
+
+giftNextBtn.addEventListener('click', async ()=>{
+  await removeGift(giftsQueue[currentGiftIndex]);
+  currentGiftIndex++; showGift(currentGiftIndex);
+});
+
+giftModal.querySelector('.close-btn').addEventListener('click', async ()=>{
+  for(let i=currentGiftIndex;i<giftsQueue.length;i++) await removeGift(giftsQueue[i]);
+  giftModal.classList.remove('show'); giftsQueue=[]; currentGiftIndex=0; fetchMonsters();
+});
+
+document.getElementById('check-gifts-btn').addEventListener('click',checkGifts);
+
+// --- Login / Init ---
+document.getElementById('login-btn').addEventListener('click',()=>window.location.href='/login');
+
+(async function init(){
+  try{
+    const res=await fetch('/my-monsters');
+    if(res.ok){ document.getElementById('login-btn').style.display='none'; document.getElementById('top-bar').style.display='flex'; fetchMonsters(); }
+  }catch(err){ console.log('Not logged in'); }
+})();
+</script>
+</body>
+</html>
