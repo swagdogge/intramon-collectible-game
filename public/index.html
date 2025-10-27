@@ -245,7 +245,6 @@ async function checkInbox() {
   }
 }
 
-// Claim All button
 document.getElementById('claim-all-btn').addEventListener('click', async () => {
   try {
     const res = await fetch('/claim-all', { method: 'POST' });
@@ -253,17 +252,15 @@ document.getElementById('claim-all-btn').addEventListener('click', async () => {
     if (res.ok) {
       alert(data.message);
 
-      // Clear inbox queue
+      // Clear inbox and hide modal
       inboxQueue = [];
       currentInboxIndex = 0;
-
-      // Hide the modal
       inboxModal.classList.remove('show');
 
-      // Update inbox count display
-      document.getElementById('inbox-count').textContent = '';
+      // Update inbox count
+      updateInboxCount();
 
-      // Refresh the player's monsters
+      // Refresh monsters
       fetchMonsters();
     } else {
       alert(data.error || 'Failed to claim all');
@@ -275,10 +272,19 @@ document.getElementById('claim-all-btn').addEventListener('click', async () => {
 });
 
 
+function updateInboxCount() {
+  const count = inboxQueue.length - currentInboxIndex;
+  document.getElementById('inbox-count').textContent = `Inbox: ${count} monster${count !== 1 ? 's' : ''}`;
+}
 
 function showInbox(index) {
   if (index >= inboxQueue.length) {
-    inboxModal.classList.remove('show'); inboxQueue = []; currentInboxIndex = 0; fetchMonsters(); return;
+    inboxModal.classList.remove('show');
+    inboxQueue = [];
+    currentInboxIndex = 0;
+    updateInboxCount();
+    fetchMonsters();
+    return;
   }
   const mon = inboxQueue[index];
   inboxReason.textContent = `Reason: ${mon.reason === 'eval' ? 'Evaluation' : 'Gift'}`;
@@ -287,6 +293,8 @@ function showInbox(index) {
   inboxRarity.style.color = getRarityColor(mon.rarity);
   inboxImg.src = mon.image || '/monsters/placeholder.png';
   inboxModal.classList.add('show');
+
+  updateInboxCount(); // Update count every time a monster is shown
 
   claimBtn.onclick = async () => {
     await claimMonster(mon.instanceId);
@@ -297,16 +305,15 @@ async function claimMonster(instanceId) {
   try {
     const res = await fetch(`/claim/${instanceId}`, { method: 'POST' });
     if (!res.ok) throw new Error('Claim failed');
+
     currentInboxIndex++;
-    showInbox(currentInboxIndex);
-  } catch (err) { console.error(err); alert(err.message); }
+    showInbox(currentInboxIndex); // will also update count
+  } catch (err) {
+    console.error(err);
+    alert(err.message);
+  }
 }
 
-inboxModal.querySelector('.close-btn').addEventListener('click', () => {
-  inboxModal.classList.remove('show'); inboxQueue = []; currentInboxIndex = 0;
-  fetchMonsters();
-});
-document.getElementById('check-inbox-btn').addEventListener('click', checkInbox);
 
 // --- Sort Controls ---
 const sortSelect = document.getElementById('sort-select');
