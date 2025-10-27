@@ -7,6 +7,8 @@ const axios = require('axios');
 const qs = require('qs');
 const admin = require('firebase-admin');
 const path = require('path');
+const crypto = require('crypto');
+
 
 
 // ======================
@@ -254,7 +256,6 @@ app.post('/gift', async (req, res) => {
 
 const { getClaimCode, markCodeClaimed, createClaimCode } = require("./claimCodes.js");
 
-
 app.post("/claim-code", async (req, res) => {
   const { code } = req.body;
   const playerId = req.session.playerId;
@@ -272,7 +273,14 @@ app.post("/claim-code", async (req, res) => {
     if (entry.claimedBy?.includes(playerId))
       return res.status(400).json({ error: "You already used this code" });
 
-    // Add monster to inbox
+    // Create monster instance
+    const monster = {
+      ...entry.monster,
+      instanceId: crypto.randomUUID(),
+      reason: "code"
+    };
+
+    // Add monster to player's inbox
     const playerRef = db.collection("players").doc(playerId);
     await db.runTransaction(async (t) => {
       const doc = await t.get(playerRef);
@@ -280,14 +288,25 @@ app.post("/claim-code", async (req, res) => {
 
       const data = doc.data();
       data.inbox = data.inbox || [];
-      const monster = {
-        ...entry.monster,
-        instanceId: crypto.randomUUID(),
-        reason: "code"
-      };
       data.inbox.push(monster);
       t.update(playerRef, { inbox: data.inbox });
     });
+
+    // Mark code as claimed (warn if fails but don’t block)
+    try {
+      await markCodeClaimed(db, code, playerId);
+    } catch (err) {
+      console.warn(`⚠️ Failed to mark code ${code} as claimed:`, err.message);
+    }
+
+    // ✅ Return the monster so frontend can display it
+    res.json({ success: true, monster });
+  } catch (err) {
+    console.error("Error redeeming code:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 
 	// Mark code as claimed, but don’t fail redemption if it errors
 try {
