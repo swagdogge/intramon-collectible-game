@@ -254,14 +254,14 @@ app.post('/gift', async (req, res) => {
 
 const { claimCodes } = require('./claimCodes.js');
 
-// POST /claim-code
 app.post('/claim-code', async (req, res) => {
   const { code } = req.body;
   const playerId = req.session.playerId;
 
   if (!playerId) return res.status(401).json({ error: 'Not logged in' });
+  if (!code) return res.status(400).json({ error: 'Missing code' });
 
-  const entry = claimCodes[code?.toUpperCase()];
+  const entry = claimCodes[code.trim().toUpperCase()];
   if (!entry) return res.status(400).json({ error: 'Invalid code' });
 
   if (new Date() > new Date(entry.expires))
@@ -270,18 +270,36 @@ app.post('/claim-code', async (req, res) => {
   if (entry.claimedBy.includes(playerId))
     return res.status(400).json({ error: 'You already used this code' });
 
-  entry.claimedBy.push(playerId);
+  try {
+    // ✅ Mark code as claimed
+    entry.claimedBy.push(playerId);
 
-  // Add to player’s inbox
-  const monster = {
-    ...entry.monster,
-    instanceId: crypto.randomUUID(),
-    reason: 'code'
-  };
-  players[playerId].inbox.push(monster);
+    // ✅ Add monster to Firestore inbox
+    const playerRef = db.collection('players').doc(playerId);
+    await db.runTransaction(async (t) => {
+      const doc = await t.get(playerRef);
+      if (!doc.exists) throw new Error('Player not found');
 
-  res.json({ success: true, monster });
+      const data = doc.data();
+      data.inbox = data.inbox || [];
+
+      const monster = {
+        ...entry.monster,
+        instanceId: crypto.randomUUID(),
+        reason: 'code'
+      };
+
+      data.inbox.push(monster);
+      t.update(playerRef, { inbox: data.inbox });
+    });
+
+    res.json({ success: true, message: 'Monster added to your inbox!' });
+  } catch (err) {
+    console.error('Error redeeming code:', err);
+    res.status(500).json({ error: 'Error redeeming code' });
+  }
 });
+
 
 //claim
 
