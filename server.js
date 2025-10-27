@@ -164,7 +164,8 @@ app.get('/oauth/callback', async (req, res) => {
         name: playerName,
         monsters: [],
         inbox: [],
-        grantedEvaluations: []
+        grantedEvaluations: [],
+        monsterCount: 0 // new players start with 0
       };
 
       // Give 3 random monsters to new player
@@ -178,6 +179,11 @@ app.get('/oauth/callback', async (req, res) => {
       }
     } else {
       playerData = playerDoc.data();
+
+      // If monsterCount field doesn't exist, calculate it manually
+      if (typeof playerData.monsterCount !== 'number') {
+        playerData.monsterCount = (playerData.monsters || []).length;
+      }
     }
 
     // Ensure arrays exist for existing players
@@ -218,6 +224,7 @@ app.get('/oauth/callback', async (req, res) => {
     res.status(500).send('OAuth failed');
   }
 });
+
 
 
 // Get player's monsters
