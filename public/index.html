@@ -290,7 +290,7 @@ function showInbox(index) {
     return;
   }
   const mon = inboxQueue[index];
-  inboxReason.textContent = `Reason: ${mon.reason === 'eval' ? 'Evaluation' : 'Gift'}`;
+  inboxReason.textContent = `Reason: ${mon.reason.charAt(0).toUpperCase() + mon.reason.slice(1)}`;
   inboxName.textContent = mon.name;
   inboxRarity.textContent = mon.rarity.toUpperCase();
   inboxRarity.style.color = getRarityColor(mon.rarity);
