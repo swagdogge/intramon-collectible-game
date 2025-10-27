@@ -252,7 +252,7 @@ app.post('/gift', async (req, res) => {
 
 //CODES
 
-import { claimCodes } from './claimCodes.js';
+const { claimCodes } = require('./claimCodes.js');
 
 // POST /claim-code
 app.post('/claim-code', async (req, res) => {
