@@ -252,9 +252,18 @@ document.getElementById('claim-all-btn').addEventListener('click', async () => {
     const data = await res.json();
     if (res.ok) {
       alert(data.message);
+
+      // Clear inbox queue
       inboxQueue = [];
       currentInboxIndex = 0;
+
+      // Hide the modal
+      inboxModal.classList.remove('show');
+
+      // Update inbox count display
       document.getElementById('inbox-count').textContent = '';
+
+      // Refresh the player's monsters
       fetchMonsters();
     } else {
       alert(data.error || 'Failed to claim all');
@@ -264,6 +273,7 @@ document.getElementById('claim-all-btn').addEventListener('click', async () => {
     alert('Error claiming all monsters');
   }
 });
+
 
 
 function showInbox(index) {
