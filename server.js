@@ -340,7 +340,7 @@ res.json({ success: true, message: "Monster added to your inbox!" });
 
 (async () => {
   try {
-    const ref = db.collection("claimCodes").doc("TEST");
+    const ref = db.collection("claimCodes").doc("FOURTYTWO");
     const existing = await ref.get();
 
     if (!existing.exists) {
