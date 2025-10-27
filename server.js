@@ -252,53 +252,75 @@ app.post('/gift', async (req, res) => {
 
 //CODES
 
-const { claimCodes } = require('./claimCodes.js');
+const { getClaimCode, markCodeClaimed } = require("./claimCodes.js");
 
-app.post('/claim-code', async (req, res) => {
+app.post("/claim-code", async (req, res) => {
   const { code } = req.body;
   const playerId = req.session.playerId;
 
-  if (!playerId) return res.status(401).json({ error: 'Not logged in' });
-  if (!code) return res.status(400).json({ error: 'Missing code' });
-
-  const entry = claimCodes[code.trim().toUpperCase()];
-  if (!entry) return res.status(400).json({ error: 'Invalid code' });
-
-  if (new Date() > new Date(entry.expires))
-    return res.status(400).json({ error: 'Code expired' });
-
-  if (entry.claimedBy.includes(playerId))
-    return res.status(400).json({ error: 'You already used this code' });
+  if (!playerId) return res.status(401).json({ error: "Not logged in" });
+  if (!code) return res.status(400).json({ error: "Missing code" });
 
   try {
-    // ✅ Mark code as claimed
-    entry.claimedBy.push(playerId);
+    const entry = await getClaimCode(db, code);
+    if (!entry) return res.status(400).json({ error: "Invalid code" });
+    if (new Date() > new Date(entry.expires))
+      return res.status(400).json({ error: "Code expired" });
 
-    // ✅ Add monster to Firestore inbox
-    const playerRef = db.collection('players').doc(playerId);
+    // Check if already claimed
+    if (entry.claimedBy?.includes(playerId))
+      return res.status(400).json({ error: "You already used this code" });
+
+    // Add monster to inbox
+    const playerRef = db.collection("players").doc(playerId);
     await db.runTransaction(async (t) => {
       const doc = await t.get(playerRef);
-      if (!doc.exists) throw new Error('Player not found');
+      if (!doc.exists) throw new Error("Player not found");
 
       const data = doc.data();
       data.inbox = data.inbox || [];
-
       const monster = {
         ...entry.monster,
         instanceId: crypto.randomUUID(),
-        reason: 'code'
+        reason: "code"
       };
-
       data.inbox.push(monster);
       t.update(playerRef, { inbox: data.inbox });
     });
 
-    res.json({ success: true, message: 'Monster added to your inbox!' });
+    // Mark code as claimed
+	await markCodeClaimed(db, code, playerId);
+
+    res.json({ success: true, message: "Monster added to your inbox!" });
   } catch (err) {
-    console.error('Error redeeming code:', err);
-    res.status(500).json({ error: 'Error redeeming code' });
+    console.error("Error redeeming code:", err);
+    res.status(500).json({ error: err.message });
   }
 });
+
+(async () => {
+  try {
+    await createClaimCode(
+      db,
+      "TEST",
+      {
+        id: 13,
+        name: "Frostooth",
+        element: "Ice",
+        rarity: "Rare",
+        attack: 55,
+        defense: 50,
+        hp: 80,
+        image: "/monsters/frostooth.png"
+      },
+      "2025-11-05"
+    );
+    console.log("✅ Code TEST created in Firestore");
+  } catch (err) {
+    console.error("Failed to create code:", err);
+  }
+})();
+
 
 
 //claim
