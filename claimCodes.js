@@ -17,7 +17,7 @@ export const claimCodes = {
     monster: {
       name: "Aqualyte",
       rarity: "rare",
-      element: "Water",
+      element: "Electro",
       image: "/monsters/aqualyte.png",
       hp: 140,
       attack: 90,
