@@ -252,7 +252,8 @@ app.post('/gift', async (req, res) => {
 
 //CODES
 
-const { getClaimCode, markCodeClaimed } = require("./claimCodes.js");
+const { getClaimCode, markCodeClaimed, createClaimCode } = require("./claimCodes.js");
+
 
 app.post("/claim-code", async (req, res) => {
   const { code } = req.body;
