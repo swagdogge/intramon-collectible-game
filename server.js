@@ -237,6 +237,30 @@ app.get('/my-monsters', async (req, res) => {
   }
 });
 
+// Get top 10 players by number of monsters
+app.get('/leaderboard', async (req, res) => {
+  try {
+    const snapshot = await db.collection('players')
+      .orderBy('monstersCount', 'desc') // we'll maintain monstersCount in player doc
+      .limit(10)
+      .get();
+
+    const leaderboard = snapshot.docs.map(doc => {
+      const data = doc.data();
+      return {
+        name: data.name,
+        monsterCount: data.monsters?.length || 0
+      };
+    });
+
+    res.json({ leaderboard });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+
 // Gift monster
 app.post('/gift', async (req, res) => {
   const fromPlayerId = req.session.playerId;
@@ -259,24 +283,27 @@ app.post('/gift', async (req, res) => {
       const fromData = fromDoc.data();
       if (!fromData.monsters.some(m => m.instanceId === monster.instanceId)) throw new Error('Monster not owned');
 
-      // Remove monster from sender's claimed monsters
+      // Remove monster from sender
       fromData.monsters = fromData.monsters.filter(m => m.instanceId !== monster.instanceId);
+      const fromMonstersCount = fromData.monsters.length;
 
-      // Add monster to recipient's inbox with reason "gift"
+      // Add monster to recipient inbox
       const toData = toDoc.data();
       toData.inbox = toData.inbox || [];
       toData.inbox.push({ ...monster, reason: 'gift' });
 
-      t.update(fromRef, { monsters: fromData.monsters });
+      // Update both docs
+      t.update(fromRef, { monsters: fromData.monsters, monstersCount: fromMonstersCount });
       t.update(toRef, { inbox: toData.inbox });
     });
 
     res.json({ message: 'Monster sent to inbox!' });
-  } catch(err) {
+  } catch (err) {
     console.error(err);
     res.status(500).json({ error: err.message });
   }
 });
+
 
 // Claim all monsters in inbox
 app.post('/claim-all', async (req, res) => {
@@ -290,13 +317,16 @@ app.post('/claim-all', async (req, res) => {
       if (!doc.exists) throw new Error('Player not found');
 
       const data = doc.data();
-      if (!data.inbox?.length) return; // nothing to claim
+      if (!data.inbox?.length) return;
 
       data.monsters = data.monsters || [];
-      data.monsters.push(...data.inbox); // move all inbox monsters to claimed
-      data.inbox = []; // clear inbox
+      data.monsters.push(...data.inbox); // move all inbox monsters
+      data.inbox = [];
 
-      t.update(playerRef, { inbox: data.inbox, monsters: data.monsters });
+      // Update monstersCount
+      const monstersCount = data.monsters.length;
+
+      t.update(playerRef, { inbox: data.inbox, monsters: data.monsters, monstersCount });
     });
 
     res.json({ message: 'All monsters claimed!' });
@@ -305,6 +335,7 @@ app.post('/claim-all', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
 
 app.get('/my-inbox', async (req, res) => {
   const playerId = req.session.playerId;
@@ -440,34 +471,38 @@ createInitialClaimCodes();
 
 //claim
 
-app.post('/claim/:instanceId', async (req,res) => {
+app.post('/claim/:instanceId', async (req, res) => {
   const playerId = req.session.playerId;
-  if(!playerId) return res.status(401).json({ error: 'Not logged in' });
+  if (!playerId) return res.status(401).json({ error: 'Not logged in' });
 
   const { instanceId } = req.params;
   try {
     const playerRef = db.collection('players').doc(playerId);
     await db.runTransaction(async t => {
       const doc = await t.get(playerRef);
-      if(!doc.exists) throw new Error('Player not found');
+      if (!doc.exists) throw new Error('Player not found');
 
       const data = doc.data();
       const monsterIndex = data.inbox?.findIndex(m => m.instanceId === instanceId);
-      if(monsterIndex === -1) throw new Error('Monster not in inbox');
+      if (monsterIndex === -1) throw new Error('Monster not in inbox');
 
       const [monster] = data.inbox.splice(monsterIndex, 1);
       data.monsters = data.monsters || [];
       data.monsters.push(monster);
 
-      t.update(playerRef, { inbox: data.inbox, monsters: data.monsters });
+      // Update monstersCount
+      const monstersCount = data.monsters.length;
+
+      t.update(playerRef, { inbox: data.inbox, monsters: data.monsters, monstersCount });
     });
 
     res.json({ message: 'Monster claimed!' });
-  } catch(err) {
+  } catch (err) {
     console.error(err);
     res.status(500).json({ error: err.message });
   }
 });
+
 
 
 //inbox

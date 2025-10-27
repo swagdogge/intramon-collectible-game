@@ -16,6 +16,7 @@
       padding: 10px 20px; border-radius: 12px; margin-bottom: 20px;
       max-width: 800px; margin-left:auto; margin-right:auto;
     }
+	
     #monster-grid {
       display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
       gap: 20px; padding: 20px; max-width: 800px; margin: 0 auto;
@@ -68,6 +69,13 @@
 </div>
 
 </div>
+<div id="main-container" style="display: flex; max-width: 1000px; margin: 0 auto; gap: 20px;">
+  <!-- Leaderboard -->
+  <div id="leaderboard" style="width: 200px; background: rgba(255,255,255,0.9); border-radius:12px; padding:15px; box-shadow: 0 4px 10px rgba(0,0,0,0.2);">
+    <h3>Leaderboard</h3>
+    <ol id="leaderboard-list" style="padding-left:20px; margin:0;"></ol>
+  </div>
+
 
 <div id="monster-grid"></div>
 <button id="login-btn">Login via 42</button>
@@ -194,6 +202,7 @@ async function fetchMonsters() {
   }
 }
 
+
 // --- Gift Monster ---
 async function giftMonster(monster) {
   const toUsername = prompt('Enter receiver username:');
@@ -212,6 +221,29 @@ async function giftMonster(monster) {
     else { alert('Failed to gift: ' + (result.error || 'Unknown error')); }
   } catch (err) { console.error(err); alert('Gift failed: ' + err.message); }
 }
+
+async function fetchLeaderboard() {
+  try {
+    const res = await fetch('/leaderboard');
+    if (!res.ok) throw new Error('Failed to fetch leaderboard');
+    const data = await res.json();
+    const listEl = document.getElementById('leaderboard-list');
+    listEl.innerHTML = '';
+
+    data.leaderboard.forEach(player => {
+      const li = document.createElement('li');
+      li.textContent = `${player.name} (${player.monsterCount})`;
+      listEl.appendChild(li);
+    });
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+// Refresh leaderboard every 30 seconds
+fetchLeaderboard();
+setInterval(fetchLeaderboard, 30000);
+
 
 // --- Inbox ---
 const inboxModal = document.getElementById('inbox-modal');
