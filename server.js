@@ -118,6 +118,10 @@ app.get('/login', (req, res) => {
 
 // OAuth callback
 // OAuth callback
+
+// OAuth callback
+
+// OAuth callback
 app.get('/oauth/callback', async (req, res) => {
   const code = req.query.code;
   try {
@@ -151,16 +155,32 @@ app.get('/oauth/callback', async (req, res) => {
     const playerRef = db.collection('players').doc(playerId);
     const playerDoc = await playerRef.get();
 
-    let playerData = playerDoc.exists
-      ? playerDoc.data()
-      : {
-          name: playerName,
-          monsters: [],
-          inbox: [],
-          grantedEvaluations: []
-        };
+    let firstLogin = false;
+    let playerData;
 
-    // Ensure inbox exists (for existing players too)
+    if (!playerDoc.exists) {
+      firstLogin = true; // NEW player
+      playerData = {
+        name: playerName,
+        monsters: [],
+        inbox: [],
+        grantedEvaluations: []
+      };
+
+      // Give 3 random monsters to new player
+      for (let i = 0; i < 3; i++) {
+        const randomMonster = getRandomMonster();
+        playerData.inbox.push({
+          ...randomMonster,
+          instanceId: `${randomMonster.id}-${Date.now()}-${Math.floor(Math.random() * 10000)}`,
+          reason: 'welcome'
+        });
+      }
+    } else {
+      playerData = playerDoc.data();
+    }
+
+    // Ensure arrays exist for existing players
     playerData.inbox = playerData.inbox || [];
     playerData.monsters = playerData.monsters || [];
     playerData.grantedEvaluations = playerData.grantedEvaluations || [];
@@ -173,13 +193,19 @@ app.get('/oauth/callback', async (req, res) => {
 
     for (let e of evalRes.data) {
       if (playerData.grantedEvaluations.includes(e.id)) continue;
-      const newMonster = getRandomMonster();
-      playerData.inbox.push({
-        ...newMonster,
-        instanceId: `${newMonster.id}-${Date.now()}-${Math.floor(Math.random() * 10000)}`,
-        reason: 'eval'
-      });
+
+      // Always mark evaluation as granted
       playerData.grantedEvaluations.push(e.id);
+
+      // Only add monsters if NOT first login
+      if (!firstLogin) {
+        const newMonster = getRandomMonster();
+        playerData.inbox.push({
+          ...newMonster,
+          instanceId: `${newMonster.id}-${Date.now()}-${Math.floor(Math.random() * 10000)}`,
+          reason: 'eval'
+        });
+      }
     }
 
     // 5️⃣ Save player data back to Firestore
