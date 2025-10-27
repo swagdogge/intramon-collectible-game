@@ -245,6 +245,9 @@ async function checkInbox() {
   }
 }
 
+document.getElementById('check-inbox-btn').addEventListener('click', checkInbox);
+
+
 document.getElementById('claim-all-btn').addEventListener('click', async () => {
   try {
     const res = await fetch('/claim-all', { method: 'POST' });
