@@ -55,7 +55,9 @@
 <div id="top-bar" style="display:none;">
   <span id="username-display"></span>
   <button id="check-inbox-btn">Check Inbox</button>
-  <div id="sort-controls" style="display: flex; align-items: center; gap: 10px;">
+  <input id="claim-code-input" placeholder="Enter claim code" style="padding:8px;border-radius:8px;border:1px solid #ccc;">
+<button id="claim-code-btn">Redeem</button>
+	<div id="sort-controls" style="display: flex; align-items: center; gap: 10px;">
   <label for="sort-select">Sort by:</label>
   <select id="sort-select">
     <option value="name">Name</option>
@@ -276,6 +278,31 @@ sortOrderBtn.addEventListener('click', () => {
   sortOrderBtn.textContent = currentSort.ascending ? '⬆️' : '⬇️';
   renderMonsters(allMonsters);
 });
+
+//code handler
+
+document.getElementById('claim-code-btn').addEventListener('click', async () => {
+  const code = document.getElementById('claim-code-input').value.trim();
+  if (!code) return alert('Enter a code!');
+  try {
+    const res = await fetch('/claim-code', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code })
+    });
+    const data = await res.json();
+    if (res.ok) {
+      alert(`You received ${data.monster.name}! Check your inbox!`);
+      document.getElementById('claim-code-input').value = '';
+    } else {
+      alert(data.error || 'Invalid code');
+    }
+  } catch (err) {
+    console.error(err);
+    alert('Error redeeming code');
+  }
+});
+
 
 // --- Login / Init ---
 document.getElementById('login-btn').addEventListener('click', () => window.location.href = '/login');

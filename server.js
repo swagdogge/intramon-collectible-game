@@ -8,6 +8,7 @@ const qs = require('qs');
 const admin = require('firebase-admin');
 const path = require('path');
 
+
 // ======================
 // Firebase Setup
 // ======================
@@ -247,6 +248,39 @@ app.post('/gift', async (req, res) => {
     console.error(err);
     res.status(500).json({ error: err.message });
   }
+});
+
+//CODES
+
+import { claimCodes } from './claimCodes.js';
+
+// POST /claim-code
+app.post('/claim-code', async (req, res) => {
+  const { code } = req.body;
+  const playerId = req.session.playerId;
+
+  if (!playerId) return res.status(401).json({ error: 'Not logged in' });
+
+  const entry = claimCodes[code?.toUpperCase()];
+  if (!entry) return res.status(400).json({ error: 'Invalid code' });
+
+  if (new Date() > new Date(entry.expires))
+    return res.status(400).json({ error: 'Code expired' });
+
+  if (entry.claimedBy.includes(playerId))
+    return res.status(400).json({ error: 'You already used this code' });
+
+  entry.claimedBy.push(playerId);
+
+  // Add to player’s inbox
+  const monster = {
+    ...entry.monster,
+    instanceId: crypto.randomUUID(),
+    reason: 'code'
+  };
+  players[playerId].inbox.push(monster);
+
+  res.json({ success: true, monster });
 });
 
 //claim
