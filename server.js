@@ -363,7 +363,7 @@ async function createInitialClaimCodes() {
   try {
     const codesToCreate = [
       {
-        code: "TEST",
+        code: "HELLOWORLD",
         monster: {
           id: 13,
           name: "Frostooth",
