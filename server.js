@@ -302,7 +302,7 @@ app.post('/gift', async (req, res) => {
 
       // Remove monster from sender
       fromData.monsters = fromData.monsters.filter(m => m.instanceId !== monster.instanceId);
-      const fromMonstersCount = fromData.monsters.length;
+      const fromMonsterCount = fromData.monsters.length;
 
       // Add monster to recipient inbox
       const toData = toDoc.data();
@@ -310,7 +310,7 @@ app.post('/gift', async (req, res) => {
       toData.inbox.push({ ...monster, reason: 'gift' });
 
       // Update both docs
-      t.update(fromRef, { monsters: fromData.monsters, monstersCount: fromMonstersCount });
+      t.update(fromRef, { monsters: fromData.monsters, MonsterCount: fromMonsterCount });
       t.update(toRef, { inbox: toData.inbox });
     });
 
@@ -340,10 +340,10 @@ app.post('/claim-all', async (req, res) => {
       data.monsters.push(...data.inbox); // move all inbox monsters
       data.inbox = [];
 
-      // Update monstersCount
-      const monstersCount = data.monsters.length;
+      // Update MonsterCount
+      const MonsterCount = data.monsters.length;
 
-      t.update(playerRef, { inbox: data.inbox, monsters: data.monsters, monstersCount });
+      t.update(playerRef, { inbox: data.inbox, monsters: data.monsters, MonsterCount });
     });
 
     res.json({ message: 'All monsters claimed!' });
@@ -507,10 +507,10 @@ app.post('/claim/:instanceId', async (req, res) => {
       data.monsters = data.monsters || [];
       data.monsters.push(monster);
 
-      // Update monstersCount
-      const monstersCount = data.monsters.length;
+      // Update MonsterCount
+      const MonsterCount = data.monsters.length;
 
-      t.update(playerRef, { inbox: data.inbox, monsters: data.monsters, monstersCount });
+      t.update(playerRef, { inbox: data.inbox, monsters: data.monsters, MonsterCount });
     });
 
     res.json({ message: 'Monster claimed!' });
