@@ -289,36 +289,80 @@ app.post("/claim-code", async (req, res) => {
       t.update(playerRef, { inbox: data.inbox });
     });
 
-    // Mark code as claimed
-	await markCodeClaimed(db, code, playerId);
+	// Mark code as claimed, but don’t fail redemption if it errors
+try {
+  await markCodeClaimed(db, code, playerId);
+} catch (err) {
+  console.warn(`⚠️ Failed to mark code ${code} as claimed:`, err.message);
+}
 
-    res.json({ success: true, message: "Monster added to your inbox!" });
+res.json({ success: true, message: "Monster added to your inbox!" });
+
   } catch (err) {
     console.error("Error redeeming code:", err);
     res.status(500).json({ error: err.message });
   }
 });
 
-//ADD CODE TEST
+///////////////////
+//CLAIM CODE ADDER
+///////////////////
 
 (async () => {
   try {
-    await createClaimCode(
-      db,
-      "HELLOWORLD",
-      {
-        id: 13,
-        name: "Aquabud",
-        element: "Ice",
-        rarity: "Rare",
-        attack: 55,
-        defense: 50,
-        hp: 80,
-        image: "/monsters/aquabud.png"
-      },
-      "2025-11-05"
-    );
-    console.log("✅ Code HELLOWORLD created in Firestore");
+    const ref = db.collection("claimCodes").doc("TEST");
+    const existing = await ref.get();
+
+    if (!existing.exists) {
+      await createClaimCode(
+        db,
+        "TEST",
+        {
+          id: 13,
+          name: "Frostooth",
+          element: "Ice",
+          rarity: "Rare",
+          attack: 55,
+          defense: 50,
+          hp: 80,
+          image: "/monsters/frostooth.png"
+        },
+        "2025-11-05"
+      );
+      console.log("✅ Code TEST created in Firestore");
+    } else {
+      console.log("ℹ️ Code TEST already exists — skipping creation.");
+    }
+  } catch (err) {
+    console.error("Failed to create code:", err);
+  }
+})();
+
+(async () => {
+  try {
+    const ref = db.collection("claimCodes").doc("TEST");
+    const existing = await ref.get();
+
+    if (!existing.exists) {
+      await createClaimCode(
+        db,
+        "FOURTYTWO",
+        {
+          id: 13,
+          name: "Leafup",
+          element: "Plant",
+          rarity: "Rare",
+          attack: 55,
+          defense: 50,
+          hp: 80,
+          image: "/monsters/leafup.png"
+        },
+        "2025-11-05"
+      );
+      console.log("✅ Code FOURTYTWO created in Firestore");
+    } else {
+      console.log("ℹ️ Code FOURTYTWO already exists — skipping creation.");
+    }
   } catch (err) {
     console.error("Failed to create code:", err);
   }
