@@ -252,6 +252,53 @@ app.post('/gift', async (req, res) => {
   }
 });
 
+// Claim all monsters in inbox
+app.post('/claim-all', async (req, res) => {
+  const playerId = req.session.playerId;
+  if (!playerId) return res.status(401).json({ error: 'Not logged in' });
+
+  try {
+    const playerRef = db.collection('players').doc(playerId);
+    await db.runTransaction(async t => {
+      const doc = await t.get(playerRef);
+      if (!doc.exists) throw new Error('Player not found');
+
+      const data = doc.data();
+      if (!data.inbox?.length) return; // nothing to claim
+
+      data.monsters = data.monsters || [];
+      data.monsters.push(...data.inbox); // move all inbox monsters to claimed
+      data.inbox = []; // clear inbox
+
+      t.update(playerRef, { inbox: data.inbox, monsters: data.monsters });
+    });
+
+    res.json({ message: 'All monsters claimed!' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/my-inbox', async (req, res) => {
+  const playerId = req.session.playerId;
+  if(!playerId) return res.status(401).json({ error: 'Not logged in' });
+
+  try {
+    const playerRef = db.collection('players').doc(playerId);
+    const playerDoc = await playerRef.get();
+    if(!playerDoc.exists) return res.status(404).json({ error: 'Player not found' });
+
+    const playerData = playerDoc.data();
+    const inbox = playerData.inbox || [];
+    res.json({ inbox, count: inbox.length });
+  } catch(err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
 //CODES
 
 const { getClaimCode, markCodeClaimed, createClaimCode } = require("./claimCodes.js");

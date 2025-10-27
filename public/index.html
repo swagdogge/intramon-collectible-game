@@ -97,6 +97,9 @@
     <h2 id="inbox-name"></h2>
     <small id="inbox-rarity"></small>
     <button id="claim-btn">Claim Monster</button>
+	<button id="claim-all-btn">Claim All</button>
+<span id="inbox-count"></span>
+
   </div>
 </div>
 
@@ -225,12 +228,43 @@ async function checkInbox() {
     const res = await fetch('/my-inbox');
     if (!res.ok) throw new Error('Failed to fetch inbox');
     const data = await res.json();
-    if (!data.inbox.length) { alert('Inbox is empty :c'); return; }
+    
+    if (!data.inbox.length) {
+      alert('Inbox is empty :c'); 
+      document.getElementById('inbox-count').textContent = '';
+      return; 
+    }
+
     inboxQueue = data.inbox;
     currentInboxIndex = 0;
+    document.getElementById('inbox-count').textContent = `Inbox: ${data.count} monsters`;
     showInbox(currentInboxIndex);
-  } catch (err) { console.error(err); alert(err.message); }
+  } catch (err) {
+    console.error(err);
+    alert(err.message);
+  }
 }
+
+// Claim All button
+document.getElementById('claim-all-btn').addEventListener('click', async () => {
+  try {
+    const res = await fetch('/claim-all', { method: 'POST' });
+    const data = await res.json();
+    if (res.ok) {
+      alert(data.message);
+      inboxQueue = [];
+      currentInboxIndex = 0;
+      document.getElementById('inbox-count').textContent = '';
+      fetchMonsters();
+    } else {
+      alert(data.error || 'Failed to claim all');
+    }
+  } catch (err) {
+    console.error(err);
+    alert('Error claiming all monsters');
+  }
+});
+
 
 function showInbox(index) {
   if (index >= inboxQueue.length) {
