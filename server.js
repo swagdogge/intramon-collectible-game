@@ -249,28 +249,33 @@ app.get('/my-monsters', async (req, res) => {
   }
 });
 
-// Get top 10 players by number of monsters
 app.get('/leaderboard', async (req, res) => {
   try {
-    const snapshot = await db.collection('players')
-      .orderBy('monstersCount', 'desc') // we'll maintain monstersCount in player doc
-      .limit(10)
-      .get();
+    const snapshot = await db.collection('players').get();
+    const leaderboard = [];
 
-    const leaderboard = snapshot.docs.map(doc => {
+    snapshot.forEach(doc => {
       const data = doc.data();
-      return {
+      // Ensure monsterCount exists
+      if (typeof data.monsterCount !== 'number') {
+        data.monsterCount = (data.monsters || []).length;
+      }
+      leaderboard.push({
         name: data.name,
-        monsterCount: data.monsters?.length || 0
-      };
+        monsterCount: data.monsterCount
+      });
     });
+
+    // Sort descending by monsterCount
+    leaderboard.sort((a, b) => b.monsterCount - a.monsterCount);
 
     res.json({ leaderboard });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Server error' });
+    console.error('Leaderboard error:', err);
+    res.status(500).json({ error: 'Failed to fetch leaderboard' });
   }
 });
+
 
 
 // Gift monster
