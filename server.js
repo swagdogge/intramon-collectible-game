@@ -124,6 +124,7 @@ app.get('/login', (req, res) => {
 // OAuth callback
 app.get('/oauth/callback', async (req, res) => {
   const code = req.query.code;
+
   try {
     // 1️⃣ Exchange code for access token
     const tokenRes = await axios.post(
@@ -159,16 +160,16 @@ app.get('/oauth/callback', async (req, res) => {
     let playerData;
 
     if (!playerDoc.exists) {
-      firstLogin = true; // NEW player
+      firstLogin = true;
       playerData = {
         name: playerName,
         monsters: [],
         inbox: [],
         grantedEvaluations: [],
-        monsterCount: 0 // new players start with 0
+        monsterCount: 0
       };
 
-      // Give 3 random monsters to new player
+      // Give 3 welcome monsters
       for (let i = 0; i < 3; i++) {
         const randomMonster = getRandomMonster();
         playerData.inbox.push({
@@ -180,16 +181,14 @@ app.get('/oauth/callback', async (req, res) => {
     } else {
       playerData = playerDoc.data();
 
-      // If monsterCount field doesn't exist, calculate it manually
+      // Ensure arrays and monsterCount exist
+      playerData.monsters = playerData.monsters || [];
+      playerData.inbox = playerData.inbox || [];
+      playerData.grantedEvaluations = playerData.grantedEvaluations || [];
       if (typeof playerData.monsterCount !== 'number') {
-        playerData.monsterCount = (playerData.monsters || []).length;
+        playerData.monsterCount = playerData.monsters.length;
       }
     }
-
-    // Ensure arrays exist for existing players
-    playerData.inbox = playerData.inbox || [];
-    playerData.monsters = playerData.monsters || [];
-    playerData.grantedEvaluations = playerData.grantedEvaluations || [];
 
     // 4️⃣ Grant monsters for new evaluations
     const evalRes = await axios.get(
@@ -200,10 +199,8 @@ app.get('/oauth/callback', async (req, res) => {
     for (let e of evalRes.data) {
       if (playerData.grantedEvaluations.includes(e.id)) continue;
 
-      // Always mark evaluation as granted
       playerData.grantedEvaluations.push(e.id);
 
-      // Only add monsters if NOT first login
       if (!firstLogin) {
         const newMonster = getRandomMonster();
         playerData.inbox.push({
@@ -214,16 +211,24 @@ app.get('/oauth/callback', async (req, res) => {
       }
     }
 
-    // 5️⃣ Save player data back to Firestore
+    // 5️⃣ Update monsterCount manually for old players on first login
+    if (!firstLogin) {
+      playerData.monsterCount = playerData.monsters.length;
+    }
+
+    // 6️⃣ Save player data back to Firestore
     await playerRef.set(playerData);
 
-    // 6️⃣ Redirect to frontend
+    console.log(`Player ${playerName} logged in. Monster count: ${playerData.monsterCount}`);
+
+    // 7️⃣ Redirect to frontend
     res.redirect(`/index.html?userId=${userRes.data.id}`);
   } catch (err) {
-    console.error('OAuth error:', err.response?.data || err.message);
-    res.status(500).send('OAuth failed');
+    console.error('OAuth callback error:', err.response?.data || err.message);
+    res.status(500).send('OAuth failed. Check server logs.');
   }
 });
+
 
 
 
