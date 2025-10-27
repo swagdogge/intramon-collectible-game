@@ -256,6 +256,7 @@ app.post('/gift', async (req, res) => {
 
 const { getClaimCode, markCodeClaimed, createClaimCode } = require("./claimCodes.js");
 
+
 app.post("/claim-code", async (req, res) => {
   const { code } = req.body;
   const playerId = req.session.playerId;
@@ -307,21 +308,6 @@ app.post("/claim-code", async (req, res) => {
   }
 });
 
-
-	// Mark code as claimed, but don’t fail redemption if it errors
-try {
-  await markCodeClaimed(db, code, playerId);
-} catch (err) {
-  console.warn(`⚠️ Failed to mark code ${code} as claimed:`, err.message);
-}
-
-res.json({ success: true, message: "Monster added to your inbox!" });
-
-  } catch (err) {
-    console.error("Error redeeming code:", err);
-    res.status(500).json({ error: err.message });
-  }
-});
 
 ///////////////////
 //CLAIM CODE ADDER
