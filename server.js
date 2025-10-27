@@ -309,20 +309,15 @@ app.post("/claim-code", async (req, res) => {
 });
 
 
-///////////////////
-//CLAIM CODE ADDER
-///////////////////
-
-(async () => {
+// ======================
+// INITIAL CLAIM CODES SETUP
+// ======================
+async function createInitialClaimCodes() {
   try {
-    const ref = db.collection("claimCodes").doc("TEST");
-    const existing = await ref.get();
-
-    if (!existing.exists) {
-      await createClaimCode(
-        db,
-        "TEST",
-        {
+    const codesToCreate = [
+      {
+        code: "TEST",
+        monster: {
           id: 13,
           name: "Frostooth",
           element: "Ice",
@@ -332,28 +327,12 @@ app.post("/claim-code", async (req, res) => {
           hp: 80,
           image: "/monsters/frostooth.png"
         },
-        "2025-11-05"
-      );
-      console.log("✅ Code TEST created in Firestore");
-    } else {
-      console.log("ℹ️ Code TEST already exists — skipping creation.");
-    }
-  } catch (err) {
-    console.error("Failed to create code:", err);
-  }
-})();
-
-(async () => {
-  try {
-    const ref = db.collection("claimCodes").doc("FOURTYTWO");
-    const existing = await ref.get();
-
-    if (!existing.exists) {
-      await createClaimCode(
-        db,
-        "FOURTYTWO",
-        {
-          id: 13,
+        expires: "2025-11-05"
+      },
+      {
+        code: "FOURTYTWO",
+        monster: {
+          id: 18,
           name: "Leafup",
           element: "Plant",
           rarity: "Rare",
@@ -362,16 +341,27 @@ app.post("/claim-code", async (req, res) => {
           hp: 80,
           image: "/monsters/leafup.png"
         },
-        "2025-11-05"
-      );
-      console.log("✅ Code FOURTYTWO created in Firestore");
-    } else {
-      console.log("ℹ️ Code FOURTYTWO already exists — skipping creation.");
+        expires: "2025-11-05"
+      }
+    ];
+
+    for (const entry of codesToCreate) {
+      const ref = db.collection("claimCodes").doc(entry.code);
+      const doc = await ref.get();
+      if (!doc.exists) {
+        await createClaimCode(db, entry.code, entry.monster, entry.expires);
+        console.log(`✅ Code ${entry.code} created in Firestore`);
+      } else {
+        console.log(`ℹ️ Code ${entry.code} already exists — skipping creation.`);
+      }
     }
   } catch (err) {
-    console.error("Failed to create code:", err);
+    console.error("❌ Failed to create initial claim codes:", err);
   }
-})();
+}
+
+// Call the async function
+createInitialClaimCodes();
 
 
 
