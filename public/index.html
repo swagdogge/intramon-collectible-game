@@ -74,6 +74,7 @@
   <div id="leaderboard" style="width: 200px; background: rgba(255,255,255,0.9); border-radius:12px; padding:15px; box-shadow: 0 4px 10px rgba(0,0,0,0.2);">
     <h3>Leaderboard</h3>
     <ol id="leaderboard-list" style="padding-left:20px; margin:0;"></ol>
+	<button id="leaderboard-refresh-btn" style="margin-top:10px; padding:5px 10px; font-size:12px; cursor:pointer;">Refresh</button>
   </div>
 
 
@@ -241,8 +242,6 @@ async function fetchLeaderboard() {
 }
 
 // Refresh leaderboard every 30 seconds
-fetchLeaderboard();
-setInterval(fetchLeaderboard, 30000);
 
 
 // --- Inbox ---
@@ -388,7 +387,10 @@ document.getElementById('claim-code-btn').addEventListener('click', async () => 
     alert('Error redeeming code');
   }
 });
-
+//refresh leaderboard
+document.getElementById('leaderboard-refresh-btn').addEventListener('click', () => {
+  fetchLeaderboard();
+});
 
 // --- Login / Init ---
 document.getElementById('login-btn').addEventListener('click', () => window.location.href = '/login');
