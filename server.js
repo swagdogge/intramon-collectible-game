@@ -299,24 +299,26 @@ app.post("/claim-code", async (req, res) => {
   }
 });
 
+//ADD CODE TEST
+
 (async () => {
   try {
     await createClaimCode(
       db,
-      "TEST",
+      "HELLOWORLD",
       {
         id: 13,
-        name: "Frostooth",
+        name: "Aquabud",
         element: "Ice",
         rarity: "Rare",
         attack: 55,
         defense: 50,
         hp: 80,
-        image: "/monsters/frostooth.png"
+        image: "/monsters/aquabud.png"
       },
       "2025-11-05"
     );
-    console.log("✅ Code TEST created in Firestore");
+    console.log("✅ Code HELLOWORLD created in Firestore");
   } catch (err) {
     console.error("Failed to create code:", err);
   }
