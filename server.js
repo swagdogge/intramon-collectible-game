@@ -59,22 +59,22 @@ const REDIRECT_URI = process.env.REDIRECT_URI;
 
 const monsters = [
   // Electro
-  { id: 1, name: "Voltadillo", element: "Electro", rarity: "Common", attack: 55, defense: 50, hp: 80, image: "/monsters/voltadillo.png", weight: 70 },
+  { id: 1, name: "Voltadillo", element: "Electro", rarity: "Common", attack: 30, defense: 70, hp: 80, image: "/monsters/voltadillo.png", weight: 70 },
 
   // Water
-  { id: 2, name: "Aqualet", element: "Water", rarity: "Common", attack: 90, defense: 70, hp: 100, image: "/monsters/aqualet.png", weight: 70 },
+  { id: 2, name: "Aqualet", element: "Water", rarity: "Common", attack: 35, defense: 60, hp: 30, image: "/monsters/aqualet.png", weight: 70 },
 
   // Fire
-  { id: 3, name: "Emberpup", element: "Fire", rarity: "Common", attack: 70, defense: 45, hp: 75, image: "/monsters/emberpup.png", weight: 70 },
+  { id: 3, name: "Emberpup", element: "Fire", rarity: "Common", attack: 45, defense: 45, hp: 75, image: "/monsters/emberpup.png", weight: 70 },
 
   // Ice
-  { id: 4, name: "Frostooth", element: "Ice", rarity: "Common", attack: 55, defense: 50, hp: 80, image: "/monsters/frostooth.png", weight: 70 },
+  { id: 4, name: "Frostooth", element: "Ice", rarity: "Common", attack: 70, defense: 30, hp: 80, image: "/monsters/frostooth.png", weight: 70 },
 
   // Plant
-  { id: 5, name: "Leafup", element: "Plant", rarity: "Common", attack: 55, defense: 50, hp: 80, image: "/monsters/leafup.png", weight: 70 },
+  { id: 5, name: "Leafup", element: "Plant", rarity: "Common", attack: 30, defense: 78, hp: 80, image: "/monsters/leafup.png", weight: 70 },
 
   // Ground
-  { id: 6, name: "Pebblit", element: "Ground", rarity: "Common", attack: 35, defense: 40, hp: 65, image: "/monsters/pebblit.png", weight: 70 },
+  { id: 6, name: "Pebblit", element: "Ground", rarity: "Common", attack: 25, defense: 90, hp: 40, image: "/monsters/pebblit.png", weight: 70 },
 ];
 
 
@@ -423,13 +423,13 @@ async function createInitialClaimCodes() {
         code: "HELLOWORLD",
         monster: {
           id: 13,
-          name: "Frostooth",
-          element: "Ice",
+          name: "Emberpup",
+          element: "Fire",
           rarity: "Rare",
-          attack: 55,
-          defense: 50,
-          hp: 80,
-          image: "/monsters/frostooth.png"
+          attack: 60,
+          defense: 60,
+          hp: 90,
+          image: "/monsters/emberpup.png"
         },
         expires: "2025-11-05"
       },
@@ -440,9 +440,9 @@ async function createInitialClaimCodes() {
           name: "Leafup",
           element: "Plant",
           rarity: "Rare",
-          attack: 55,
-          defense: 50,
-          hp: 80,
+          attack: 50,
+          defense: 60,
+          hp: 100,
           image: "/monsters/leafup.png"
         },
         expires: "2025-11-05"
