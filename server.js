@@ -1,4 +1,4 @@
-claimrequire('dotenv').config(); // Load env variables
+require('dotenv').config(); // Load env variables
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
@@ -510,26 +510,6 @@ app.post('/claim/:instanceId', async (req, res) => {
   }
 });
 
-
-
-//inbox
-
-app.get('/my-inbox', async (req, res) => {
-  const playerId = req.session.playerId;
-  if(!playerId) return res.status(401).json({ error: 'Not logged in' });
-
-  try {
-    const playerRef = db.collection('players').doc(playerId);
-    const playerDoc = await playerRef.get();
-    if(!playerDoc.exists) return res.status(404).json({ error: 'Player not found' });
-
-    const playerData = playerDoc.data();
-    res.json({ inbox: playerData.inbox || [] });
-  } catch(err) {
-    console.error(err);
-    res.status(500).json({ error: err.message });
-  }
-});
 
 // Find user by username
 app.get('/find-user/:username', async (req,res) => {
