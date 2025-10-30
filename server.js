@@ -360,8 +360,6 @@ const {
   createInitialClaimCodes
 } = require("./claimCodes.js");
 
-const { monsters } = require("./data/monsters");
-
 app.post("/claim-code", async (req, res) => {
   const { code } = req.body;
   const playerId = req.session.playerId;
