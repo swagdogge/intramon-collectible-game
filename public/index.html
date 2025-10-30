@@ -53,20 +53,31 @@
 <body>
 <h1>Intramon</h1>
 
-<div id="top-bar" style="display:none;">
-  <span id="username-display"></span>
-  <button id="check-inbox-btn">Check Inbox</button>
-  <input id="claim-code-input" placeholder="Enter claim code" style="padding:8px;border-radius:8px;border:1px solid #ccc;">
-<button id="claim-code-btn">Redeem</button>
-	<div id="sort-controls" style="display: flex; align-items: center; gap: 10px;">
-  <label for="sort-select">Sort by:</label>
-  <select id="sort-select">
-    <option value="name">Name</option>
-    <option value="rarity">Rarity</option>
-    <option value="element">Element</option>
-  </select>
-  <button id="sort-order-btn" title="Toggle order">⬆️</button>
+<div id="top-bar" style="display:none; align-items:center;">
+  <span id="username-display" style="font-weight:600;"></span>
+  
+  <div style="display:flex; align-items:center; gap:10px;">
+    <button id="check-inbox-btn">Check Inbox</button>
+    <input id="claim-code-input" placeholder="Enter claim code" style="padding:8px;border-radius:8px;border:1px solid #ccc;">
+    <button id="claim-code-btn">Redeem</button>
+    
+    <div id="sort-controls" style="display: flex; align-items: center; gap: 10px;">
+      <label for="sort-select">Sort by:</label>
+      <select id="sort-select">
+        <option value="name">Name</option>
+        <option value="rarity">Rarity</option>
+        <option value="element">Element</option>
+      </select>
+      <button id="sort-order-btn" title="Toggle order">⬆️</button>
+    </div>
+
+    <!-- Crystal Counter -->
+    <div id="crystal-counter" style="margin-left:20px; font-weight:600; display:flex; align-items:center; gap:5px;">
+      💎 <span id="crystal-amount">0</span>
+    </div>
+  </div>
 </div>
+
 
 </div>
 <div id="main-container" style="display: flex; max-width: 1000px; margin: 0 auto; gap: 20px;">
@@ -223,23 +234,44 @@ async function giftMonster(monster) {
   } catch (err) { console.error(err); alert('Gift failed: ' + err.message); }
 }
 
-async function fetchLeaderboard() {
+async function fetchMonsters() {
   try {
-    const res = await fetch('/leaderboard');
-    if (!res.ok) throw new Error('Failed to fetch leaderboard');
+    const res = await fetch('/my-monsters');
+    if (!res.ok) return;
     const data = await res.json();
-    const listEl = document.getElementById('leaderboard-list');
-    listEl.innerHTML = '';
+    allMonsters = data.monsters || [];
 
-    data.leaderboard.forEach(player => {
-      const li = document.createElement('li');
-      li.textContent = `${player.name} (${player.monsterCount})`;
-      listEl.appendChild(li);
+    // --- Coalition & Crystal Info ---
+    const coalitionName = data.coalition || "Unknown";
+    const coalitionColor = data.coalitionColor || "#802200"; // default fallback
+    const crystals = data.crystals ?? 0;
+
+    // Update username display with coalition
+    document.getElementById('username-display').textContent =
+      `Logged in as: ${data.name} (${coalitionName})`;
+
+    // Update crystal count
+    document.getElementById('crystal-amount').textContent = crystals;
+
+    // Apply coalition color theme to main buttons
+    const themedButtons = [
+      'check-inbox-btn', 'claim-code-btn',
+      'sort-order-btn', 'leaderboard-refresh-btn'
+    ];
+    themedButtons.forEach(id => {
+      const btn = document.getElementById(id);
+      if (btn) {
+        btn.style.backgroundColor = coalitionColor;
+        btn.style.borderColor = coalitionColor;
+      }
     });
+
+    renderMonsters(allMonsters);
   } catch (err) {
-    console.error(err);
+    console.error('Failed to fetch mons:', err);
   }
 }
+
 
 // Refresh leaderboard every 30 seconds
 

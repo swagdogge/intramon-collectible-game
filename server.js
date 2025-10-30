@@ -67,7 +67,6 @@ app.get('/login', (req, res) => {
   res.redirect(url);
 });
 
-const { getUserCoalition, computeCrystals } = require("./utils/42");
 
 // ======================
 // oautch callback
