@@ -9,14 +9,13 @@ const admin = require('firebase-admin');
 const path = require('path');
 const crypto = require('crypto');
 const { monsters, getRandomMonsterInstance, enrichMonster } = require('./data/monsters');
-
-
-
+const { getUserCoalition, computeCrystals } = require('./utils/42');
 
 
 // ======================
 // Firebase Setup
 // ======================
+
 const serviceAccount = JSON.parse(process.env.FIREBASE_KEY_JSON);
 
 admin.initializeApp({
@@ -28,6 +27,7 @@ const db = admin.firestore();
 // ======================
 // Express Setup
 // ======================
+
 const app = express();
 const PORT = process.env.PORT || 10000; // fallback just in case
 app.listen(PORT, '0.0.0.0', () => console.log(`Server running on port ${PORT}`));
@@ -52,10 +52,10 @@ app.use(express.static(path.join(__dirname, 'public')));
 // ======================
 // 42 OAuth Config
 // ======================
+
 const CLIENT_ID = process.env.CLIENT_ID;
 const CLIENT_SECRET = process.env.CLIENT_SECRET;
 const REDIRECT_URI = process.env.REDIRECT_URI;
-
 
 // ======================
 // Routes
@@ -67,29 +67,34 @@ app.get('/login', (req, res) => {
   res.redirect(url);
 });
 
-// OAuth callback
-app.get('/oauth/callback', async (req, res) => {
+const { getUserCoalition, computeCrystals } = require("./utils/42");
+
+// ======================
+// oautch callback
+// ======================
+
+app.get("/oauth/callback", async (req, res) => {
   const code = req.query.code;
 
   try {
     // 1️⃣ Exchange code for access token
     const tokenRes = await axios.post(
-      'https://api.intra.42.fr/oauth/token',
+      "https://api.intra.42.fr/oauth/token",
       qs.stringify({
-        grant_type: 'authorization_code',
+        grant_type: "authorization_code",
         client_id: CLIENT_ID,
         client_secret: CLIENT_SECRET,
         code,
         redirect_uri: REDIRECT_URI
       }),
-      { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
+      { headers: { "Content-Type": "application/x-www-form-urlencoded" } }
     );
 
     const accessToken = tokenRes.data.access_token;
     req.session.accessToken = accessToken;
 
     // 2️⃣ Fetch user info
-    const userRes = await axios.get('https://api.intra.42.fr/v2/me', {
+    const userRes = await axios.get("https://api.intra.42.fr/v2/me", {
       headers: { Authorization: `Bearer ${accessToken}` }
     });
 
@@ -99,7 +104,7 @@ app.get('/oauth/callback', async (req, res) => {
     req.session.username = playerName;
 
     // 3️⃣ Fetch or create player data
-    const playerRef = db.collection('players').doc(playerId);
+    const playerRef = db.collection("players").doc(playerId);
     const playerDoc = await playerRef.get();
 
     let firstLogin = false;
@@ -112,10 +117,12 @@ app.get('/oauth/callback', async (req, res) => {
         monsters: [],
         inbox: [],
         grantedEvaluations: [],
-        monsterCount: 0
+        monsterCount: 0,
+        crystals: 0,
+        lastLogCheck: new Date().toISOString()
       };
 
-      // Give 3 welcome monsters
+      // 🎁 Give 3 welcome monsters
       for (let i = 0; i < 3; i++) {
         const randomMonster = getRandomMonsterInstance();
         playerData.inbox.push({
@@ -125,65 +132,101 @@ app.get('/oauth/callback', async (req, res) => {
           defense: randomMonster.defense,
           hp: randomMonster.hp,
           instanceId: `${randomMonster.id}-${Date.now()}-${Math.floor(Math.random() * 10000)}`,
-          reason: 'welcome'
+          reason: "welcome"
         });
       }
     } else {
       playerData = playerDoc.data();
-
-      // Ensure arrays and monsterCount exist
+      // Ensure structure integrity
       playerData.monsters = playerData.monsters || [];
       playerData.inbox = playerData.inbox || [];
       playerData.grantedEvaluations = playerData.grantedEvaluations || [];
-      if (typeof playerData.monsterCount !== 'number') {
+      playerData.crystals = playerData.crystals || 0;
+      playerData.lastLogCheck = playerData.lastLogCheck || new Date().toISOString();
+
+      if (typeof playerData.monsterCount !== "number") {
         playerData.monsterCount = playerData.monsters.length;
       }
     }
 
-    // 4️⃣ Grant monsters for new evaluations
-    const evalRes = await axios.get(
-      `https://api.intra.42.fr/v2/users/${userRes.data.id}/scale_teams/as_corrector`,
-      { headers: { Authorization: `Bearer ${accessToken}` } }
-    );
-
-    for (let e of evalRes.data) {
-      if (playerData.grantedEvaluations.includes(e.id)) continue;
-
-      playerData.grantedEvaluations.push(e.id);
-
-      if (!firstLogin) {
-        const newMonster = getRandomMonsterInstance();
-        playerData.inbox.push({
-          id: newMonster.id,
-          rarity: newMonster.rarity,
-          attack: newMonster.attack,
-          defense: newMonster.defense,
-          hp: newMonster.hp,
-          instanceId: `${newMonster.id}-${Date.now()}-${Math.floor(Math.random() * 10000)}`,
-          reason: 'eval'
-        });
+    // 4️⃣ Fetch coalition info
+    try {
+      const coalition = await getUserCoalition(accessToken, userRes.data.id);
+      if (coalition) {
+        playerData.coalitionId = coalition.id;
+        playerData.coalitionName = coalition.name;
+        playerData.coalitionColor = coalition.color;
       }
+    } catch (err) {
+      console.warn("⚠️ Coalition fetch failed:", err.message);
     }
 
-    // 5️⃣ Update monsterCount manually for returning players
+    // 5️⃣ Grant monsters for new evaluations
+    try {
+      const evalRes = await axios.get(
+        `https://api.intra.42.fr/v2/users/${userRes.data.id}/scale_teams/as_corrector`,
+        { headers: { Authorization: `Bearer ${accessToken}` } }
+      );
+
+      for (let e of evalRes.data) {
+        if (playerData.grantedEvaluations.includes(e.id)) continue;
+
+        playerData.grantedEvaluations.push(e.id);
+
+        if (!firstLogin) {
+          const newMonster = getRandomMonsterInstance();
+          playerData.inbox.push({
+            id: newMonster.id,
+            rarity: newMonster.rarity,
+            attack: newMonster.attack,
+            defense: newMonster.defense,
+            hp: newMonster.hp,
+            instanceId: `${newMonster.id}-${Date.now()}-${Math.floor(Math.random() * 10000)}`,
+            reason: "eval"
+          });
+        }
+      }
+    } catch (err) {
+      console.warn("⚠️ Evaluation fetch failed:", err.message);
+    }
+
+    // 6️⃣ Compute crystals from logtime
+    try {
+      const locationsRes = await axios.get(
+        `https://api.intra.42.fr/v2/users/${userRes.data.id}/locations`,
+        { headers: { Authorization: `Bearer ${accessToken}` } }
+      );
+
+      const crystalsEarned = computeCrystals(playerData.lastLogCheck, locationsRes.data || []);
+      if (crystalsEarned > 0) {
+        playerData.crystals += crystalsEarned;
+        console.log(`💎 Awarded ${crystalsEarned} crystals to ${playerName}`);
+      }
+      playerData.lastLogCheck = new Date().toISOString();
+    } catch (err) {
+      console.warn("⚠️ Failed to compute crystals:", err.message);
+    }
+
+    // 7️⃣ Update monster count and save
     if (!firstLogin) {
       playerData.monsterCount = playerData.monsters.length;
     }
 
-    // 6️⃣ Save player data back to Firestore
     await playerRef.set(playerData);
+    console.log(`✅ ${playerName} logged in | Monsters: ${playerData.monsterCount} | Crystals: ${playerData.crystals}`);
 
-    console.log(`Player ${playerName} logged in. Monster count: ${playerData.monsterCount}`);
-
-    // 7️⃣ Redirect to frontend
+    // 8️⃣ Redirect back to frontend
     res.redirect(`/index.html?userId=${userRes.data.id}`);
   } catch (err) {
-    console.error('OAuth callback error:', err.response?.data || err.message);
-    res.status(500).send('OAuth failed. Check server logs.');
+    console.error("❌ OAuth callback error:", err.response?.data || err.message);
+    res.status(500).send("OAuth failed. Check server logs.");
   }
 });
 
 
+// ======================
+// my-monsters
+// ======================
 app.get('/my-monsters', async (req, res) => {
   const playerId = req.session.playerId;
   if (!playerId) return res.status(401).json({ error: 'Not logged in' });
@@ -204,7 +247,9 @@ app.get('/my-monsters', async (req, res) => {
   }
 });
 
-
+// ======================
+// leaderboard
+// ======================
 app.get('/leaderboard', async (req, res) => {
   try {
     const snapshot = await db.collection('players').get();
@@ -231,9 +276,9 @@ app.get('/leaderboard', async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch leaderboard' });
   }
 });
-
-
-
+// ======================
+// gift
+// ======================
 app.post('/gift', async (req, res) => {
   const fromPlayerId = req.session.playerId;
   if (!fromPlayerId) return res.status(401).json({ error: 'Not logged in' });
@@ -283,8 +328,9 @@ app.post('/gift', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-
-
+// ======================
+// claim all
+// ======================
 app.post('/claim-all', async (req, res) => {
   const playerId = req.session.playerId;
   if (!playerId) return res.status(401).json({ error: 'Not logged in' });
@@ -324,8 +370,6 @@ app.post('/claim-all', async (req, res) => {
   }
 });
 
-
-
 // ======================
 // Get player's inbox (enriched)
 // ======================
@@ -347,8 +391,6 @@ app.get('/my-inbox', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-
-
 
 //CODES
 
@@ -403,10 +445,6 @@ app.post("/claim-code", async (req, res) => {
 createInitialClaimCodes();
 
 
-
-
-//claim end
-
 app.post('/claim/:instanceId', async (req, res) => {
   const playerId = req.session.playerId;
   if (!playerId) return res.status(401).json({ error: 'Not logged in' });
@@ -448,6 +486,154 @@ app.post('/claim/:instanceId', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
+// ======================
+// Get player's coalition
+// ======================
+app.get("/my-coalition", async (req, res) => {
+  const playerId = req.session.playerId;
+  if (!playerId) return res.status(401).json({ error: "Not logged in" });
+
+  try {
+    const playerDoc = await db.collection("players").doc(playerId).get();
+    if (!playerDoc.exists) return res.status(404).json({ error: "Player not found" });
+
+    const data = playerDoc.data();
+    res.json({
+      coalitionId: data.coalitionId || null,
+      coalitionName: data.coalitionName || "Unknown",
+      coalitionColor: data.coalitionColor || "#888888"
+    });
+  } catch (err) {
+    console.error("❌ Coalition fetch error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+// ======================
+// Get player's crystals
+// ======================
+app.get("/my-crystals", async (req, res) => {
+  const playerId = req.session.playerId;
+  if (!playerId) return res.status(401).json({ error: "Not logged in" });
+
+  try {
+    const playerDoc = await db.collection("players").doc(playerId).get();
+    if (!playerDoc.exists) return res.status(404).json({ error: "Player not found" });
+
+    const data = playerDoc.data();
+    res.json({
+      crystals: data.crystals || 0,
+      lastLogCheck: data.lastLogCheck || null
+    });
+  } catch (err) {
+    console.error("❌ Crystals fetch error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+// ======================
+// Improved: Claim crystals from logtime
+// ======================
+app.get("/refresh-logtime", async (req, res) => {
+  const playerId = req.session.playerId;
+  const accessToken = req.session.accessToken;
+
+  if (!playerId || !accessToken) {
+    return res.status(401).json({ error: "Not logged in or missing access token" });
+  }
+
+  try {
+    const userRes = await axios.get("https://api.intra.42.fr/v2/me", {
+      headers: { Authorization: `Bearer ${accessToken}` }
+    });
+    const userId = userRes.data.id;
+
+    // 1️⃣ Fetch player data
+    const playerRef = db.collection("players").doc(playerId);
+    const playerDoc = await playerRef.get();
+    if (!playerDoc.exists) return res.status(404).json({ error: "Player not found" });
+
+    const playerData = playerDoc.data();
+    playerData.lastLogCheckTime = playerData.lastLogCheckTime || 0;
+    playerData.lastLogCheck = playerData.lastLogCheck || 0; // stores last known totalHours
+    playerData.crystals = playerData.crystals || 0;
+
+    // 2️⃣ Anti-spam cooldown: 1 refresh per hour
+    const now = Date.now();
+    if (now - playerData.lastLogCheckTime < 60 * 60 * 1000) {
+      const mins = Math.ceil((60 * 60 * 1000 - (now - playerData.lastLogCheckTime)) / 60000);
+      return res.json({
+        success: false,
+        message: `⏳ Please wait ${mins} more min before refreshing again.`
+      });
+    }
+
+    // 3️⃣ Try to get total logtime hours
+    let totalHours = 0;
+    try {
+      const statsRes = await axios.get(`https://api.intra.42.fr/v2/users/${userId}/locations_stats`, {
+        headers: { Authorization: `Bearer ${accessToken}` }
+      });
+      totalHours = statsRes.data?.hours || 0;
+    } catch {
+      // Fallback: manually count recent logins (last 7 days)
+      console.warn("⚠️ Fallback: using recent locations data for logtime");
+      const locRes = await axios.get(`https://api.intra.42.fr/v2/users/${userId}/locations`, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+        params: { per_page: 100 }
+      });
+
+      const locations = locRes.data || [];
+      totalHours = locations.reduce((sum, l) => {
+        if (l.end_at && l.begin_at) {
+          const diff = (new Date(l.end_at) - new Date(l.begin_at)) / (1000 * 60 * 60);
+          return sum + Math.max(diff, 0);
+        }
+        return sum;
+      }, 0);
+    }
+
+    // 4️⃣ Calculate new hours since last check
+    const prevHours = playerData.lastLogCheck || 0;
+    const hoursGained = totalHours - prevHours;
+
+    if (hoursGained <= 0) {
+      await playerRef.update({ lastLogCheckTime: now });
+      return res.json({
+        success: true,
+        crystalsEarned: 0,
+        message: "No new logtime since your last check."
+      });
+    }
+
+    // 5️⃣ Compute rewards
+    const REWARD_RATE = 10; // 10 crystals per hour
+    const crystalsEarned = Math.floor(hoursGained * REWARD_RATE);
+    playerData.crystals += crystalsEarned;
+
+    // 6️⃣ Save back to Firestore
+    await playerRef.update({
+      crystals: playerData.crystals,
+      lastLogCheck: totalHours,
+      lastLogCheckTime: now
+    });
+
+    console.log(`💎 ${playerData.name} earned ${crystalsEarned} crystals (${hoursGained.toFixed(2)}h logged)`);
+
+    res.json({
+      success: true,
+      crystalsEarned,
+      totalCrystals: playerData.crystals,
+      hoursGained: hoursGained.toFixed(2),
+      message: `You earned ${crystalsEarned} crystals for ${hoursGained.toFixed(2)} new hours!`
+    });
+  } catch (err) {
+    console.error("❌ Error refreshing logtime:", err.response?.data || err.message);
+    res.status(500).json({ error: "Failed to refresh logtime" });
+  }
+});
+
 
 
 // Find user by username

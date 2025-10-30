@@ -393,6 +393,7 @@ document.getElementById('leaderboard-refresh-btn').addEventListener('click', () 
 });
 
 // --- Login / Init ---
+// --- Login / Init ---
 document.getElementById('login-btn').addEventListener('click', () => window.location.href = '/login');
 
 (async function init() {
@@ -401,10 +402,35 @@ document.getElementById('login-btn').addEventListener('click', () => window.loca
     if (res.ok) {
       document.getElementById('login-btn').style.display = 'none';
       document.getElementById('top-bar').style.display = 'flex';
-      fetchMonsters();
+      await fetchMonsters();
+
+      // ✅ Automatically refresh logtime upon page load
+      console.log('Refreshing logtime...');
+      try {
+        const logRes = await fetch('/refresh-logtime');
+        if (logRes.ok) {
+          const logData = await logRes.json();
+          console.log('Logtime refreshed:', logData);
+          // You can optionally reward the player or display a popup here
+          if (logData.rewardGranted) {
+            alert(`You earned a reward for logging ${logData.hours} hours today!`);
+            await checkInbox(); // auto-check inbox if they got something
+          }
+        } else {
+          console.warn('Failed to refresh logtime');
+        }
+      } catch (err) {
+        console.error('Error refreshing logtime:', err);
+      }
+
+      // Fetch leaderboard as well
+      await fetchLeaderboard();
     }
-  } catch (err) { console.log('Not logged in'); }
+  } catch (err) { 
+    console.log('Not logged in'); 
+  }
 })();
+
 </script>
 
 </body>
