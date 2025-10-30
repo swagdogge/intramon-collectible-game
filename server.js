@@ -365,26 +365,31 @@ app.post("/claim-code", async (req, res) => {
   try {
     const entry = await getClaimCode(db, code);
     if (!entry) return res.status(400).json({ error: "Invalid code" });
+
     if (new Date() > new Date(entry.expires))
       return res.status(400).json({ error: "Code expired" });
 
     if (entry.claimedBy?.includes(playerId))
       return res.status(400).json({ error: "You already used this code" });
 
-    // Create minimal monster instance
+    // Lookup the monster in your monsters array using the stored ID
+    const m = monsters.find(mon => mon.id === entry.monster.id);
+    if (!m) return res.status(500).json({ error: `Monster ID ${entry.monster.id} not found` });
+
+    // Create minimal monster instance for inbox
     const monster = {
-      id: entry.monster.id,
-      rarity: entry.monster.rarity,
-      attack: entry.monster.attack,
-      defense: entry.monster.defense,
-      hp: entry.monster.hp,
-      instanceId: crypto.randomUUID(),
+      id: m.id,
+      rarity: m.rarity,
+      attack: m.attack,
+      defense: m.defense,
+      hp: m.hp,
+      instanceId: crypto.randomUUID(), // unique instance for this player
       reason: "code"
     };
 
     // Add monster to player's inbox
     const playerRef = db.collection("players").doc(playerId);
-    await db.runTransaction(async (t) => {
+    await db.runTransaction(async t => {
       const doc = await t.get(playerRef);
       if (!doc.exists) throw new Error("Player not found");
 
@@ -410,48 +415,40 @@ app.post("/claim-code", async (req, res) => {
 
 
 
+
 // ======================
 // INITIAL CLAIM CODES SETUP
 // ======================
+// Default expiration date for claim codes
+const DEFAULT_CODE_EXPIRATION = new Date("2025-11-05");
+
 async function createInitialClaimCodes() {
   try {
+    // List of initial codes to create
     const codesToCreate = [
-      {
-        code: "HELLOWORLD",
-        monster: {
-          id: 13,
-          name: "Emberpup",
-          element: "Fire",
-          rarity: "Rare",
-          attack: 60,
-          defense: 60,
-          hp: 90,
-          image: "/monsters/emberpup.png"
-        },
-        expires: "2025-11-05"
-      },
-      {
-        code: "FOURTYTWO",
-        monster: {
-          id: 18,
-          name: "Leafup",
-          element: "Plant",
-          rarity: "Rare",
-          attack: 50,
-          defense: 60,
-          hp: 100,
-          image: "/monsters/leafup.png"
-        },
-        expires: "2025-11-05"
-      }
+      { code: "HELLOWORLD", monsterId: "3-rare", expires: "2025-11-05" }, // Emberpup, Rare
+      { code: "FOURTYTWO", monsterId: "4-rare" } // Leafup, Rare, will use default expiration
     ];
 
     for (const entry of codesToCreate) {
       const ref = db.collection("claimCodes").doc(entry.code);
       const doc = await ref.get();
+
       if (!doc.exists) {
-        await createClaimCode(db, entry.code, entry.monster, entry.expires);
-        console.log(`✅ Code ${entry.code} created in Firestore`);
+        // Find the monster in your monsters array using the combined ID
+        const m = monsters.find(mon => mon.id === entry.monsterId);
+        if (!m) {
+          console.warn(`⚠️ Monster ID ${entry.monsterId} not found, skipping code ${entry.code}`);
+          continue;
+        }
+
+        // Determine expiration: use per-code or fallback to default
+        const expires = entry.expires || DEFAULT_CODE_EXPIRATION.toISOString();
+
+        // Store minimal info in Firestore (id + rarity)
+        await createClaimCode(db, entry.code, { id: m.id, rarity: m.rarity }, expires);
+
+        console.log(`✅ Code ${entry.code} created for ${m.name} (${m.rarity}), expires: ${expires}`);
       } else {
         console.log(`ℹ️ Code ${entry.code} already exists — skipping creation.`);
       }
@@ -463,6 +460,7 @@ async function createInitialClaimCodes() {
 
 // Call the async function
 createInitialClaimCodes();
+
 
 
 
