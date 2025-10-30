@@ -1,4 +1,4 @@
-require('dotenv').config(); // Load env variables
+claimrequire('dotenv').config(); // Load env variables
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
@@ -8,6 +8,9 @@ const qs = require('qs');
 const admin = require('firebase-admin');
 const path = require('path');
 const crypto = require('crypto');
+const { monsters, getRandomMonsterInstance, enrichMonster } = require('./data/monsters');
+
+
 
 
 
@@ -53,41 +56,6 @@ const CLIENT_ID = process.env.CLIENT_ID;
 const CLIENT_SECRET = process.env.CLIENT_SECRET;
 const REDIRECT_URI = process.env.REDIRECT_URI;
 
-// ======================
-// Monsters
-// ======================
-
-const monsters = [
-  // Electro
-  { id: 1, name: "Voltadillo", element: "Electro", rarity: "Common", attack: 30, defense: 70, hp: 80, image: "/monsters/voltadillo.png", weight: 70 },
-
-  // Water
-  { id: 2, name: "Aqualet", element: "Water", rarity: "Common", attack: 35, defense: 60, hp: 30, image: "/monsters/aqualet.png", weight: 70 },
-
-  // Fire
-  { id: 3, name: "Emberpup", element: "Fire", rarity: "Common", attack: 45, defense: 45, hp: 75, image: "/monsters/emberpup.png", weight: 70 },
-
-  // Ice
-  { id: 4, name: "Frostooth", element: "Ice", rarity: "Common", attack: 70, defense: 30, hp: 80, image: "/monsters/frostooth.png", weight: 70 },
-
-  // Plant
-  { id: 5, name: "Leafup", element: "Plant", rarity: "Common", attack: 30, defense: 78, hp: 80, image: "/monsters/leafup.png", weight: 70 },
-
-  // Ground
-  { id: 6, name: "Pebblit", element: "Ground", rarity: "Common", attack: 25, defense: 90, hp: 40, image: "/monsters/pebblit.png", weight: 70 },
-];
-
-
-
-function getRandomMonster() {
-  const totalWeight = monsters.reduce((sum, m) => sum + m.weight, 0);
-  const rand = Math.random() * totalWeight;
-  let cumulative = 0;
-  for (const m of monsters) {
-    cumulative += m.weight;
-    if (rand <= cumulative) return m;
-  }
-}
 
 // ======================
 // Routes
@@ -98,11 +66,6 @@ app.get('/login', (req, res) => {
   const url = `https://api.intra.42.fr/oauth/authorize?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=code`;
   res.redirect(url);
 });
-
-// OAuth callback
-// OAuth callback
-
-// OAuth callback
 
 // OAuth callback
 app.get('/oauth/callback', async (req, res) => {
@@ -154,9 +117,13 @@ app.get('/oauth/callback', async (req, res) => {
 
       // Give 3 welcome monsters
       for (let i = 0; i < 3; i++) {
-        const randomMonster = getRandomMonster();
+        const randomMonster = getRandomMonsterInstance();
         playerData.inbox.push({
-          ...randomMonster,
+          id: randomMonster.id,
+          rarity: randomMonster.rarity,
+          attack: randomMonster.attack,
+          defense: randomMonster.defense,
+          hp: randomMonster.hp,
           instanceId: `${randomMonster.id}-${Date.now()}-${Math.floor(Math.random() * 10000)}`,
           reason: 'welcome'
         });
@@ -185,16 +152,20 @@ app.get('/oauth/callback', async (req, res) => {
       playerData.grantedEvaluations.push(e.id);
 
       if (!firstLogin) {
-        const newMonster = getRandomMonster();
+        const newMonster = getRandomMonsterInstance();
         playerData.inbox.push({
-          ...newMonster,
+          id: newMonster.id,
+          rarity: newMonster.rarity,
+          attack: newMonster.attack,
+          defense: newMonster.defense,
+          hp: newMonster.hp,
           instanceId: `${newMonster.id}-${Date.now()}-${Math.floor(Math.random() * 10000)}`,
           reason: 'eval'
         });
       }
     }
 
-    // 5️⃣ Update monsterCount manually for old players on first login
+    // 5️⃣ Update monsterCount manually for returning players
     if (!firstLogin) {
       playerData.monsterCount = playerData.monsters.length;
     }
@@ -213,24 +184,26 @@ app.get('/oauth/callback', async (req, res) => {
 });
 
 
-
-
-// Get player's monsters
 app.get('/my-monsters', async (req, res) => {
   const playerId = req.session.playerId;
   if (!playerId) return res.status(401).json({ error: 'Not logged in' });
 
   try {
-    const playerRef = db.collection('players').doc(playerId);
-    const playerDoc = await playerRef.get();
+    const playerDoc = await db.collection('players').doc(playerId).get();
     if (!playerDoc.exists) return res.status(404).json({ error: 'Player not found' });
 
-    res.json(playerDoc.data());
-  } catch(err) {
+    const playerData = playerDoc.data();
+
+    // Enrich monsters for frontend
+    const enrichedMonsters = (playerData.monsters || []).map(enrichMonster);
+
+    res.json({ ...playerData, monsters: enrichedMonsters });
+  } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error' });
   }
 });
+
 
 app.get('/leaderboard', async (req, res) => {
   try {
@@ -261,7 +234,6 @@ app.get('/leaderboard', async (req, res) => {
 
 
 
-// Gift monster
 app.post('/gift', async (req, res) => {
   const fromPlayerId = req.session.playerId;
   if (!fromPlayerId) return res.status(401).json({ error: 'Not logged in' });
@@ -287,10 +259,18 @@ app.post('/gift', async (req, res) => {
       fromData.monsters = fromData.monsters.filter(m => m.instanceId !== monster.instanceId);
       const frommonsterCount = fromData.monsters.length;
 
-      // Add monster to recipient inbox
+      // Add monster to recipient inbox (with reason)
       const toData = toDoc.data();
       toData.inbox = toData.inbox || [];
-      toData.inbox.push({ ...monster, reason: 'gift' });
+      toData.inbox.push({
+        id: monster.id,
+        rarity: monster.rarity,
+        attack: monster.attack,
+        defense: monster.defense,
+        hp: monster.hp,
+        instanceId: monster.instanceId,
+        reason: 'gift'
+      });
 
       // Update both docs
       t.update(fromRef, { monsters: fromData.monsters, monsterCount: frommonsterCount });
@@ -305,7 +285,6 @@ app.post('/gift', async (req, res) => {
 });
 
 
-// Claim all monsters in inbox
 app.post('/claim-all', async (req, res) => {
   const playerId = req.session.playerId;
   if (!playerId) return res.status(401).json({ error: 'Not logged in' });
@@ -320,12 +299,21 @@ app.post('/claim-all', async (req, res) => {
       if (!data.inbox?.length) return;
 
       data.monsters = data.monsters || [];
-      data.monsters.push(...data.inbox); // move all inbox monsters
+
+      // Move all inbox monsters, keep only minimal info + reason removed since claimed
+      const claimedMonsters = data.inbox.map(m => ({
+        id: m.id,
+        rarity: m.rarity,
+        attack: m.attack,
+        defense: m.defense,
+        hp: m.hp,
+        instanceId: m.instanceId
+      }));
+
+      data.monsters.push(...claimedMonsters);
       data.inbox = [];
 
-      // Update monsterCount
       const monsterCount = data.monsters.length;
-
       t.update(playerRef, { inbox: data.inbox, monsters: data.monsters, monsterCount });
     });
 
@@ -337,23 +325,29 @@ app.post('/claim-all', async (req, res) => {
 });
 
 
+
+// ======================
+// Get player's inbox (enriched)
+// ======================
 app.get('/my-inbox', async (req, res) => {
   const playerId = req.session.playerId;
-  if(!playerId) return res.status(401).json({ error: 'Not logged in' });
+  if (!playerId) return res.status(401).json({ error: 'Not logged in' });
 
   try {
     const playerRef = db.collection('players').doc(playerId);
     const playerDoc = await playerRef.get();
-    if(!playerDoc.exists) return res.status(404).json({ error: 'Player not found' });
+    if (!playerDoc.exists) return res.status(404).json({ error: 'Player not found' });
 
     const playerData = playerDoc.data();
-    const inbox = playerData.inbox || [];
+    const inbox = (playerData.inbox || []).map(enrichMonster); // 🔹 Enrich monsters before sending
+
     res.json({ inbox, count: inbox.length });
-  } catch(err) {
+  } catch (err) {
     console.error(err);
     res.status(500).json({ error: err.message });
   }
 });
+
 
 
 //CODES
@@ -374,13 +368,16 @@ app.post("/claim-code", async (req, res) => {
     if (new Date() > new Date(entry.expires))
       return res.status(400).json({ error: "Code expired" });
 
-    // Check if already claimed
     if (entry.claimedBy?.includes(playerId))
       return res.status(400).json({ error: "You already used this code" });
 
-    // Create monster instance
+    // Create minimal monster instance
     const monster = {
-      ...entry.monster,
+      id: entry.monster.id,
+      rarity: entry.monster.rarity,
+      attack: entry.monster.attack,
+      defense: entry.monster.defense,
+      hp: entry.monster.hp,
       instanceId: crypto.randomUUID(),
       reason: "code"
     };
@@ -397,20 +394,20 @@ app.post("/claim-code", async (req, res) => {
       t.update(playerRef, { inbox: data.inbox });
     });
 
-    // Mark code as claimed (warn if fails but don’t block)
+    // Mark code as claimed
     try {
       await markCodeClaimed(db, code, playerId);
     } catch (err) {
       console.warn(`⚠️ Failed to mark code ${code} as claimed:`, err.message);
     }
 
-    // ✅ Return the monster so frontend can display it
     res.json({ success: true, monster });
   } catch (err) {
     console.error("Error redeeming code:", err);
     res.status(500).json({ error: err.message });
   }
 });
+
 
 
 // ======================
@@ -478,6 +475,7 @@ app.post('/claim/:instanceId', async (req, res) => {
   const { instanceId } = req.params;
   try {
     const playerRef = db.collection('players').doc(playerId);
+
     await db.runTransaction(async t => {
       const doc = await t.get(playerRef);
       if (!doc.exists) throw new Error('Player not found');
@@ -487,12 +485,21 @@ app.post('/claim/:instanceId', async (req, res) => {
       if (monsterIndex === -1) throw new Error('Monster not in inbox');
 
       const [monster] = data.inbox.splice(monsterIndex, 1);
+
+      // Move only minimal info to monsters array
+      const claimedMonster = {
+        id: monster.id,
+        rarity: monster.rarity,
+        attack: monster.attack,
+        defense: monster.defense,
+        hp: monster.hp,
+        instanceId: monster.instanceId
+      };
+
       data.monsters = data.monsters || [];
-      data.monsters.push(monster);
+      data.monsters.push(claimedMonster);
 
-      // Update monsterCount
       const monsterCount = data.monsters.length;
-
       t.update(playerRef, { inbox: data.inbox, monsters: data.monsters, monsterCount });
     });
 
@@ -539,4 +546,4 @@ app.get('/find-user/:username', async (req,res) => {
   }
 });
 
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
