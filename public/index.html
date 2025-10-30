@@ -242,7 +242,7 @@ async function fetchMonsters() {
     allMonsters = data.monsters || [];
 
     // --- Coalition & Crystal Info ---
-    const coalitionName = data.coalition || "Unknown";
+    const coalitionName = data.coalitionName || "Unknown";
     const coalitionColor = data.coalitionColor || "#802200"; // default fallback
     const crystals = data.crystals ?? 0;
 
@@ -273,7 +273,24 @@ async function fetchMonsters() {
 }
 
 
-// Refresh leaderboard every 30 seconds
+async function fetchLeaderboard() {
+  try {
+    const res = await fetch('/leaderboard');
+    if (!res.ok) throw new Error('Failed to fetch leaderboard');
+    const data = await res.json();
+    const listEl = document.getElementById('leaderboard-list');
+    listEl.innerHTML = '';
+    data.leaderboard.forEach(player => {
+      const li = document.createElement('li');
+      li.textContent = `${player.name} (${player.monsterCount} monsters)`;
+      listEl.appendChild(li);
+    });
+  } catch (err) {
+    console.error(err);
+    alert('Error loading leaderboard');
+  }
+}
+
 
 
 // --- Inbox ---
