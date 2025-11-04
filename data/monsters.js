@@ -7,7 +7,8 @@ const baseMonsters = [
   { id: 3, name: "Emberpup", element: "Fire", baseAttack: 65, baseDefense: 35, baseHp: 75, image: "/monsters/emberpup.png" },
   { id: 4, name: "Leafup", element: "Plant", baseAttack: 50, baseDefense: 60, baseHp: 85, image: "/monsters/leafup.png" },
   { id: 5, name: "Frostooth", element: "Ice", baseAttack: 40, baseDefense: 65, baseHp: 80, image: "/monsters/frostooth.png" },
-  { id: 6, name: "Pebblit", element: "Ground", baseAttack: 35, baseDefense: 80, baseHp: 90, image: "/monsters/pebblit.png" }
+  { id: 6, name: "Pebblit", element: "Ground", baseAttack: 35, baseDefense: 80, baseHp: 90, image: "/monsters/pebblit.png" },
+  { id: 7, name: "Tsunamew", element: "Water", baseAttack: 60, baseDefense: 60, baseHp: 50, image: "/monsters/tsunamew.png" }
 ];
 
 // Rarity multipliers

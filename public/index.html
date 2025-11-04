@@ -282,7 +282,7 @@ async function fetchLeaderboard() {
     listEl.innerHTML = '';
     data.leaderboard.forEach(player => {
       const li = document.createElement('li');
-      li.textContent = `${player.name} (${player.monsterCount} monsters)`;
+      li.textContent = `${player.name} (${player.monsterCount} mons)`;
       listEl.appendChild(li);
     });
   } catch (err) {
