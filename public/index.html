@@ -3,127 +3,236 @@
 <head>
   <meta charset="UTF-8">
   <title>Intramon</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
-    body {
-      font-family: 'Segoe UI', sans-serif;
-      background: linear-gradient(180deg, #ffffff, #ffffff52);
-      margin: 0; padding: 20px; text-align: center;
+    /* BASE LAYOUT */
+    :root{
+      --bg:#050007;
+      --panel: rgba(255,255,255,0.03);
+      --soft: rgba(255,255,255,0.04);
+      --glass: rgba(255,255,255,0.02);
+      --accent: #8b5cf6; /* purple */
+      --accent-2: #6d28d9;
+      --muted: #b9b9c6;
+      --card-radius: 16px;
+      --shadow-glow: 0 0 30px rgba(139,92,246,0.18), inset 0 0 40px rgba(139,92,246,0.035);
+      --glass-border: 1px solid rgba(255,255,255,0.04);
     }
-    h1 { color: #5f5f5f; text-shadow: 1px 1px 3px rgba(0,0,0,0.2); }
-    #top-bar {
-      display: flex; justify-content: space-between; align-items: center;
-      background: rgba(255,255,255,0.8);
-      padding: 10px 20px; border-radius: 12px; margin-bottom: 20px;
-      max-width: 800px; margin-left:auto; margin-right:auto;
+
+    html,body{height:100%;}
+    body{
+      margin:0; padding:28px; font-family: Inter, 'Segoe UI', system-ui, -apple-system, 'Helvetica Neue', Arial;
+      background: radial-gradient(600px 400px at 10% 10%, rgba(107,33,168,0.08), transparent 8%),
+                  radial-gradient(400px 300px at 90% 90%, rgba(139,92,246,0.06), transparent 8%),
+                  var(--bg);
+      color: #e6e6ee; -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
+      -webkit-touch-callout:none; -ms-text-size-adjust:100%;
+      scroll-behavior: smooth;
     }
-	
-    #monster-grid {
-      display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-      gap: 20px; padding: 20px; max-width: 800px; margin: 0 auto;
+
+    /* subtle animated aura around the page */
+    .page-aura{
+      pointer-events:none; position:fixed; inset:0; z-index:0; mix-blend-mode:screen;
+      background: radial-gradient(circle at 10% 10%, rgba(139,92,246,0.06), transparent 10%),
+                  radial-gradient(circle at 90% 80%, rgba(99,102,241,0.05), transparent 10%);
+      filter: blur(24px) saturate(1.2);
     }
-    .monster-card {
-      background: rgba(255,255,255,0.9); border-radius: 15px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-      padding: 15px; cursor: pointer; border: 3px solid transparent;
-      transition: transform 0.2s, box-shadow 0.2s;
+
+    h1{font-weight:700; margin:0 0 6px; letter-spacing:-0.02em; color: #efeaff; font-size:20px}
+
+    /* TOP BAR */
+    #top-bar{
+      display:flex; align-items:center; justify-content:space-between;
+      gap:12px; padding:12px 16px; border-radius:12px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      border: var(--glass-border); box-shadow: var(--shadow-glow);
+      max-width:1100px; margin:0 auto 22px; position:relative; z-index:5;
+      backdrop-filter: blur(8px) saturate(1.2);
+      transform: translateZ(0);
     }
-    .monster-card:hover {
-      transform: scale(1.05); box-shadow: 0 6px 15px rgba(0,0,0,0.3);
+    #top-bar.hidden{display:none}
+
+    #username-display{font-weight:700; color:#f3ecff}
+
+    /* layout */
+    #main-container{display:flex; gap:22px; max-width:1200px; margin:0 auto; align-items:flex-start; z-index:4;}
+
+    /* Leaderboard */
+    #leaderboard{width:230px; padding:16px; border-radius:12px; background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); border:var(--glass-border); box-shadow: 0 8px 30px rgba(11,2,22,0.7);}
+    #leaderboard h3{margin:0 0 10px; color:#efeaff}
+    #leaderboard-list{color:var(--muted); padding-left:18px; margin:0;}
+    #leaderboard li{margin:8px 0; font-size:14px}
+
+    /* MONSTER GRID */
+    #monster-grid{
+      display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:20px; width:100%;
+      padding:12px; align-self:stretch;
     }
-    .monster-card img { width: 100px; height: 100px; object-fit: contain; margin-bottom: 10px; }
-    button {
-      margin-top: 10px; padding: 10px 20px; font-size: 14px;
-      border: none; background-color: #802200; color: white; border-radius: 8px;
-      cursor: pointer; transition: background 0.2s;
+
+    .monster-card{
+      position:relative; overflow:visible; cursor:pointer; padding:18px 14px; border-radius:var(--card-radius);
+      background: linear-gradient(180deg, rgba(255,255,255,0.018), rgba(255,255,255,0.01));
+      border: 1px solid rgba(255,255,255,0.03); box-shadow: 0 6px 26px rgba(2,2,6,0.8);
+      transition: transform .28s cubic-bezier(.2,.9,.2,1), box-shadow .28s, filter .28s;
+      display:flex; flex-direction:column; align-items:center; gap:8px; text-align:center;
+      transform-origin:center; will-change:transform;
     }
-    button:hover { background-color: #e03e00; }
-    /* Modals */
-    .modal { display:none; position: fixed; top:0; left:0; width:100%; height:100%;
-      background: rgba(0,0,0,0.5); justify-content:center; align-items:center; z-index:999; }
-    .modal.show { display:flex; }
-    .modal-content {
-      background: white; border-radius:15px; padding:25px; width:320px;
-      text-align:center; position: relative; box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+
+    /* entrance animation */
+    .monster-card[data-loaded="true"]{animation: floatIn .6s cubic-bezier(.2,.9,.2,1) both}
+    @keyframes floatIn{from{opacity:0; transform: translateY(18px) scale(.98)} to{opacity:1; transform:translateY(0) scale(1)}}
+
+    .monster-card:hover{
+      transform: translateY(-8px) scale(1.04) perspective(600px) rotateX(2deg) translateZ(4px);
+      box-shadow: 0 18px 60px rgba(99,66,255,0.18);
+      filter: saturate(1.05) drop-shadow(0 8px 40px rgba(107,33,168,0.08));
     }
-    .modal-content img { width:150px; height:150px; object-fit:contain; margin-bottom:15px; }
-    .close-btn { position:absolute; top:10px; right:15px; font-size:22px; cursor:pointer; }
-    .stats p { margin:5px 0; }
+
+    .monster-card img{width:96px; height:96px; object-fit:contain; transition: transform .5s;}
+    .monster-card:hover img{transform: translateY(-6px) rotate(-3deg) scale(1.02)}
+
+    .monster-card h3{margin:0; font-size:16px; letter-spacing:-0.02em}
+    .monster-card small{color:var(--muted); font-weight:600}
+
+    /* Buttons */
+    button{appearance:none; border:none; padding:8px 12px; border-radius:10px; font-weight:700; cursor:pointer; transition: transform .14s ease, opacity .12s ease;}
+    button:active{transform:scale(.98)}
+
+    /* primary purple buttons */
+    .btn-primary{background:linear-gradient(180deg,var(--accent), var(--accent-2)); color:white; box-shadow: 0 6px 22px rgba(107,33,168,0.18)}
+
+    /* input */
+    input{background:transparent; border:1px solid rgba(255,255,255,0.05); padding:8px 10px; border-radius:10px; color:#efeaff; outline:none}
+    input::placeholder{color:#9b94a8}
+
+    /* MODALS */
+    .modal{display:none; position:fixed; inset:0; background:linear-gradient(180deg, rgba(0,0,0,0.55), rgba(0,0,0,0.6)); justify-content:center; align-items:center; padding:20px; z-index:999}
+    .modal.show{display:flex}
+    .modal-content{width:min(420px,95%); border-radius:18px; padding:22px; position:relative; background:linear-gradient(180deg, rgba(16,7,28,0.9), rgba(18,9,34,0.95)); border:1px solid rgba(139,92,246,0.08); box-shadow: 0 40px 120px rgba(7,3,18,0.9)}
+    .modal-content img{width:160px;height:160px;object-fit:contain;margin:0 auto 12px; display:block}
+    .close-btn{position:absolute; right:14px; top:10px; font-size:20px; cursor:pointer; color:#cfc9ff}
+
+    .stats p{margin:6px 0; color:#e9e6ff}
+
+    /* INBOX small */
+    #inbox-count{display:block; margin-top:10px; color:#c9c2e6}
+
+    /* crystal counter */
+    #crystal-counter{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); padding:6px 10px; border-radius:10px; display:flex; align-items:center; gap:8px}
+
+    /* smaller layout at mobile */
+    @media (max-width:840px){
+      #main-container{flex-direction:column;}
+      #leaderboard{width:100%; order:2}
+      #monster-grid{order:1}
+    }
+
+    /* scrollbar styling */
+    ::-webkit-scrollbar{height:10px;width:10px}
+    ::-webkit-scrollbar-thumb{background: linear-gradient(180deg, rgba(139,92,246,0.18), rgba(99,102,241,0.18)); border-radius:999px}
+    ::-webkit-scrollbar-track{background:transparent}
+
+    /* subtle pulsing effect for logged-in items */
+    .pulse{animation: pulseGlow 3.6s ease-in-out infinite}
+    @keyframes pulseGlow{0%{box-shadow:0 6px 26px rgba(99,66,255,0.08)}50%{box-shadow:0 18px 60px rgba(99,66,255,0.14)}100%{box-shadow:0 6px 26px rgba(99,66,255,0.08)}}
+
+    /* little floating shimmer */
+    .shimmer{position:relative; overflow:hidden}
+    .shimmer::after{content:''; position:absolute; left:-120%; top:0; width:120%; height:100%; transform:skewX(-12deg); background:linear-gradient(90deg, transparent, rgba(255,255,255,0.03), transparent); animation: shimmer 2.4s linear infinite}
+    @keyframes shimmer{100%{left:120%}}
+
   </style>
 </head>
 <body>
-<h1>Intramon</h1>
+  <div class="page-aura" aria-hidden="true"></div>
 
-<div id="top-bar" style="display:none; align-items:center;">
-  <span id="username-display" style="font-weight:600;"></span>
-  
-  <div style="display:flex; align-items:center; gap:10px;">
-    <button id="check-inbox-btn">Check Inbox</button>
-    <input id="claim-code-input" placeholder="Enter claim code" style="padding:8px;border-radius:8px;border:1px solid #ccc;">
-    <button id="claim-code-btn">Redeem</button>
-    
-    <div id="sort-controls" style="display: flex; align-items: center; gap: 10px;">
-      <label for="sort-select">Sort by:</label>
-      <select id="sort-select">
-        <option value="name">Name</option>
-        <option value="rarity">Rarity</option>
-        <option value="element">Element</option>
-      </select>
-      <button id="sort-order-btn" title="Toggle order">⬆️</button>
+  <header id="top-bar" style="display:none;">
+    <div style="display:flex; align-items:center; gap:12px;">
+      <div style="display:flex; flex-direction:column; align-items:flex-start;">
+        <h1>Intramon</h1>
+        <div id="username-display">&nbsp;</div>
+      </div>
     </div>
 
-    <!-- Crystal Counter -->
-    <div id="crystal-counter" style="margin-left:20px; font-weight:600; display:flex; align-items:center; gap:5px;">
-      💎 <span id="crystal-amount">0</span>
+    <div style="display:flex; align-items:center; gap:10px;">
+      <button id="check-inbox-btn" class="btn-primary">Check Inbox</button>
+
+      <div style="display:flex; gap:8px; align-items:center;">
+        <input id="claim-code-input" placeholder="Enter claim code">
+        <button id="claim-code-btn" class="btn-primary">Redeem</button>
+      </div>
+
+      <div id="sort-controls" style="display:flex; align-items:center; gap:8px;">
+        <label for="sort-select" style="color:var(--muted); font-weight:600">Sort</label>
+        <select id="sort-select" style="background:transparent; color:#efeaff; border:1px solid rgba(255,255,255,0.03); padding:8px 10px; border-radius:10px">
+          <option value="name">Name</option>
+          <option value="rarity">Rarity</option>
+          <option value="element">Element</option>
+        </select>
+        <button id="sort-order-btn" title="Toggle order">⬆️</button>
+      </div>
+
+      <div id="crystal-counter" style="margin-left:18px;">
+        💎 <span id="crystal-amount">0</span>
+      </div>
+    </div>
+  </header>
+
+  <main id="main-container">
+    <aside id="leaderboard">
+      <h3>Leaderboard</h3>
+      <ol id="leaderboard-list"></ol>
+      <div style="display:flex; justify-content:flex-end; margin-top:12px;">
+        <button id="leaderboard-refresh-btn" class="btn-primary" style="padding:8px 10px; font-size:13px">Refresh</button>
+      </div>
+    </aside>
+
+    <section style="flex:1">
+      <div id="monster-grid"></div>
+      <div style="display:flex; justify-content:center; margin-top:18px;">
+        <button id="login-btn" class="btn-primary">Login via 42</button>
+      </div>
+    </section>
+  </main>
+
+  <!-- MONSTER MODAL -->
+  <div id="monster-modal" class="modal" aria-hidden="true">
+    <div class="modal-content">
+      <span class="close-btn">&times;</span>
+      <img id="modal-img" src="" alt="Monster">
+      <h2 id="modal-name"></h2>
+      <small id="modal-rarity"></small>
+      <div class="stats">
+        <p><b>HP:</b> <span id="modal-hp"></span></p>
+        <p><b>Attack:</b> <span id="modal-attack"></span></p>
+        <p><b>Defense:</b> <span id="modal-defense"></span></p>
+      </div>
+      <div style="display:flex; gap:10px; justify-content:center; margin-top:12px;">
+        <button id="gift-btn" class="btn-primary">Gift to Player</button>
+      </div>
     </div>
   </div>
-</div>
 
-
-</div>
-<div id="main-container" style="display: flex; max-width: 1000px; margin: 0 auto; gap: 20px;">
-  <!-- Leaderboard -->
-  <div id="leaderboard" style="width: 200px; background: rgba(255,255,255,0.9); border-radius:12px; padding:15px; box-shadow: 0 4px 10px rgba(0,0,0,0.2);">
-    <h3>Leaderboard</h3>
-    <ol id="leaderboard-list" style="padding-left:20px; margin:0;"></ol>
-	<button id="leaderboard-refresh-btn" style="margin-top:10px; padding:5px 10px; font-size:12px; cursor:pointer;">Refresh</button>
-  </div>
-
-
-<div id="monster-grid"></div>
-<button id="login-btn">Login via 42</button>
-
-<!-- Monster Modal -->
-<div id="monster-modal" class="modal">
-  <div class="modal-content">
-    <span class="close-btn">&times;</span>
-    <img id="modal-img" src="" alt="Monster">
-    <h2 id="modal-name"></h2>
-    <small id="modal-rarity"></small>
-    <div class="stats">
-      <p><b>HP:</b> <span id="modal-hp"></span></p>
-      <p><b>Attack:</b> <span id="modal-attack"></span></p>
-      <p><b>Defense:</b> <span id="modal-defense"></span></p>
+  <!-- INBOX MODAL -->
+  <div id="inbox-modal" class="modal" aria-hidden="true">
+    <div class="modal-content">
+      <span class="close-btn">&times;</span>
+      <h3 id="inbox-reason"></h3>
+      <img id="inbox-img" src="" alt="Inbox Monster">
+      <h2 id="inbox-name"></h2>
+      <small id="inbox-rarity"></small>
+      <div style="display:flex; gap:10px; justify-content:center; margin-top:12px;">
+        <button id="claim-btn" class="btn-primary">Claim Monster</button>
+        <button id="claim-all-btn" class="btn-primary">Claim All</button>
+      </div>
+      <span id="inbox-count"></span>
     </div>
-    <button id="gift-btn">Gift to Player</button>
   </div>
-</div>
-
-<!-- Inbox Modal -->
-<div id="inbox-modal" class="modal">
-  <div class="modal-content">
-    <span class="close-btn">&times;</span>
-    <h3 id="inbox-reason"></h3>
-    <img id="inbox-img" src="" alt="Inbox Monster">
-    <h2 id="inbox-name"></h2>
-    <small id="inbox-rarity"></small>
-    <button id="claim-btn">Claim Monster</button>
-	<button id="claim-all-btn">Claim All</button>
-<span id="inbox-count"></span>
-
-  </div>
-</div>
 
 <script>
+// ---------- KEEP ORIGINAL FRONTEND LOGIC INTACT ----------
+// (No endpoints or backend changes were made — this script is preserved so your backend still works.)
+
 const getRarityColor = (rarity) => {
   switch (rarity?.toLowerCase()) {
     case 'common': return '#4CAF50';
@@ -184,9 +293,10 @@ function renderMonsters(monsters) {
     return a.name.localeCompare(b.name) * dir;
   });
 
-  sorted.forEach(m => {
+  sorted.forEach((m, idx) => {
     const card = document.createElement('div');
-    card.className = 'monster-card';
+    card.className = 'monster-card shimmer pulse';
+    card.setAttribute('data-loaded', 'true');
     card.style.borderColor = getRarityColor(m.rarity);
     card.innerHTML = `
       <img src="${m.image || '/monsters/placeholder.png'}" 
@@ -197,6 +307,9 @@ function renderMonsters(monsters) {
     `;
     card.addEventListener('click', () => openMonsterModal(m));
     gridEl.appendChild(card);
+
+    // tiny staggered entrance
+    card.style.animationDelay = `${idx * 45}ms`;
   });
 }
 
@@ -481,6 +594,5 @@ document.getElementById('login-btn').addEventListener('click', () => window.loca
 })();
 
 </script>
-
 </body>
 </html>
