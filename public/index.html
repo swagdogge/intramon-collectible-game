@@ -78,6 +78,10 @@
   }
   .monster-card img{width:96px;height:96px;object-fit:contain;transition: transform .5s;}
   .monster-card:hover img{transform: translateY(-6px) rotate(-3deg) scale(1.02)}
+  .monster-card[data-rarity="common"] img { filter: drop-shadow(0 0 6px #4CAF50); }
+  .monster-card[data-rarity="rare"] img { filter: drop-shadow(0 0 6px #2196F3); }
+  .monster-card[data-rarity="epic"] img { filter: drop-shadow(0 0 6px #9C27B0); }
+  .monster-card[data-rarity="legendary"] img { filter: drop-shadow(0 0 6px #FF9800); }
   .monster-card h3{margin:0;font-size:16px;letter-spacing:-0.02em}
   .monster-card small{color:var(--muted);font-weight:600}
 
@@ -303,13 +307,6 @@ function renderMonsters(monsters) {
       ? hexToRgba(rarityColor, alpha) 
       : `rgba(${rarityColor},${alpha})`;
     card.style.setProperty('--shimmer-color', shimmerColor);
-
-    // Set drop shadow to match rarity
-    .monster-card[data-rarity="common"] img { filter: drop-shadow(0 0 6px #4CAF50); }
-    .monster-card[data-rarity="rare"] img { filter: drop-shadow(0 0 6px #2196F3); }
-    .monster-card[data-rarity="epic"] img { filter: drop-shadow(0 0 6px #9C27B0); }
-    .monster-card[data-rarity="legendary"] img { filter: drop-shadow(0 0 6px #FF9800); }
-
 
     // Inner HTML for monster card
     card.innerHTML = `
