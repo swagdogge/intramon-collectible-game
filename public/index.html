@@ -271,16 +271,20 @@ function renderMonsters(monsters) {
 
   // Sort monsters according to current sort settings
   const sorted = [...monsters].sort((a, b) => {
-    const dir = currentSort.ascending ? 1 : -1;
-    if (currentSort.key === 'rarity') {
+    const dir = state.currentSort.ascending ? 1 : -1;
+
+    if (state.currentSort.key === 'rarity') {
       const order = ['common', 'rare', 'epic', 'legendary'];
       return (order.indexOf(a.rarity.toLowerCase()) - order.indexOf(b.rarity.toLowerCase())) * dir;
     }
-    if (currentSort.key === 'element') {
+
+    if (state.currentSort.key === 'element') {
       if (a.element === b.element)
         return a.name.localeCompare(b.name) * dir;
       return a.element.localeCompare(b.element) * dir;
     }
+
+    // default sort by name
     return a.name.localeCompare(b.name) * dir;
   });
 
@@ -290,13 +294,11 @@ function renderMonsters(monsters) {
     card.setAttribute('data-loaded', 'true');
     card.setAttribute('data-rarity', (m.rarity || '').toLowerCase());
 
-    // Get rarity color
+    // Rarity border
     const rarityColor = getRarityColor(m.rarity);
-
-    // Apply rarity-colored border
     card.style.borderImageSource = `linear-gradient(135deg, ${rarityColor}, rgba(255,255,255,0.2))`;
 
-    // Apply shimmer color with optional alpha based on rarity intensity
+    // Shimmer color based on rarity
     let alpha = 0.08; // common
     switch ((m.rarity || '').toLowerCase()) {
       case 'rare': alpha = 0.12; break;
@@ -308,7 +310,7 @@ function renderMonsters(monsters) {
       : `rgba(${rarityColor},${alpha})`;
     card.style.setProperty('--shimmer-color', shimmerColor);
 
-    // Inner HTML for monster card
+    // Card content
     card.innerHTML = `
       <img src="${m.image || '/monsters/placeholder.png'}" 
            alt="${m.name}" 
@@ -317,10 +319,10 @@ function renderMonsters(monsters) {
       <small>${m.rarity.toUpperCase()}</small>
     `;
 
-    // Click opens modal
+    // Open modal on click
     card.addEventListener('click', () => openMonsterModal(m));
 
-    // Add tiny staggered entrance animation
+    // Staggered entrance animation
     card.style.animationDelay = `${idx * 45}ms`;
 
     gridEl.appendChild(card);
@@ -337,6 +339,7 @@ function renderMonsters(monsters) {
     return `rgba(${r},${g},${b},${alpha})`;
   }
 }
+
 
 
 /* -------------------------
