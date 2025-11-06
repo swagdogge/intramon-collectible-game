@@ -304,15 +304,6 @@ const getRarityColor = (rarity) => {
   }
 };
 
-const borderGradient = {
-  common: 'linear-gradient(135deg, #4CAF50, #81C784)',
-  rare: 'linear-gradient(135deg, #2196F3, #64B5F6)',
-  epic: 'linear-gradient(135deg, #9C27B0, #BA68C8)',
-  legendary: 'linear-gradient(135deg, #FF9800, #FFC107)'
-};
-card.style.borderImageSource = borderGradient[m.rarity.toLowerCase()] || borderGradient['common'];
-
-
 const elementColors = {
   Electro: '#FFD700',
   Water: '#00BFFF',
@@ -364,33 +355,33 @@ function renderMonsters(monsters) {
   });
 
   sorted.forEach((m, idx) => {
- const card = document.createElement('div');
-card.className = 'monster-card shimmer pulse';
-card.setAttribute('data-loaded', 'true');
-card.setAttribute('data-rarity', (m.rarity || '').toLowerCase());
-
-// Rarity border gradient
+    const card = document.createElement('div');
+    card.className = 'monster-card shimmer pulse';
+    card.setAttribute('data-loaded', 'true');
+    /* ✨ ADDED: set rarity attribute for CSS effects */
+    card.setAttribute('data-rarity', (m.rarity || '').toLowerCase());
+    // Set rarity-colored border gradient
 let rarityColor = getRarityColor(m.rarity);
 card.style.borderImageSource = `linear-gradient(135deg, ${rarityColor}, rgba(255,255,255,0.2))`;
 
-// Shimmer tint
+// Tint the shimmer sweep to match rarity
+let shimmerEl = card.querySelector('.shimmer::after') || card; // fallback
 card.style.setProperty('--shimmer-color', rarityColor);
-
-// Drop shadow on image
-// we can apply this after innerHTML
-card.innerHTML = `
-  <img src="${m.image || '/monsters/placeholder.png'}" 
-       alt="${m.name}" 
-       onerror="this.onerror=null;this.src='/monsters/placeholder.png';">
-  <h3 style="color:${elementColors[m.element] || '#555'}">${m.name}</h3>
-  <small>${m.rarity.toUpperCase()}</small>
-`;
+card.classList.add('shimmer');
 card.querySelector('img').style.filter = `drop-shadow(0 0 6px ${rarityColor})`;
 
-card.addEventListener('click', () => openMonsterModal(m));
-gridEl.appendChild(card);
-card.style.animationDelay = `${idx * 45}ms`;
+    card.innerHTML = `
+      <img src="${m.image || '/monsters/placeholder.png'}" 
+           alt="${m.name}" 
+           onerror="this.onerror=null;this.src='/monsters/placeholder.png';">
+      <h3 style="color:${elementColors[m.element] || '#555'}">${m.name}</h3>
+      <small>${m.rarity.toUpperCase()}</small>
+    `;
+    card.addEventListener('click', () => openMonsterModal(m));
+    gridEl.appendChild(card);
 
+    // tiny staggered entrance
+    card.style.animationDelay = `${idx * 45}ms`;
   });
 }
 
