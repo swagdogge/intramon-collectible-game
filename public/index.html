@@ -116,12 +116,17 @@
   .pulse{animation: pulseGlow 3.6s ease-in-out infinite}
   @keyframes pulseGlow{0%{box-shadow:0 6px 26px rgba(99,66,255,0.08)}50%{box-shadow:0 18px 60px rgba(99,66,255,0.14)}100%{box-shadow:0 6px 26px rgba(99,66,255,0.08)}}
   .shimmer{position:relative;overflow:hidden}
-  .shimmer::after{
-    content:''; position:absolute; left:-140%; top:0; width:160%; height:100%; transform:skewX(-12deg);
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.10), rgba(255,255,255,0.22), transparent);
-    animation: shimmer 1.6s linear infinite;
-  }
-  @keyframes shimmer{100%{left:140%}}
+.shimmer::after {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--shimmer-color, rgba(255,255,255,0.05)),
+    transparent
+  );
+  animation: shimmer 1.6s linear infinite;
+}
+
+  @keyframes shimmer{100%{left:100%}}
 </style>
 </head>
 <body>
@@ -256,38 +261,86 @@ monsterModalEl.addEventListener('click', e => { if(e.target===monsterModalEl) cl
 /* -------------------------
    RENDER MONSTERS
 ------------------------- */
-function renderMonsters(monsters){
-  const grid = document.getElementById('monster-grid');
-  grid.innerHTML='';
-  const sorted = [...monsters].sort((a,b)=>{
-    const dir = state.currentSort.ascending ? 1 : -1;
-    if(state.currentSort.key==='rarity'){
-      const order=['common','rare','epic','legendary'];
-      return (order.indexOf(a.rarity.toLowerCase())-order.indexOf(b.rarity.toLowerCase()))*dir;
+function renderMonsters(monsters) {
+  const gridEl = document.getElementById('monster-grid');
+  gridEl.innerHTML = '';
+
+  // Sort monsters according to current sort settings
+  const sorted = [...monsters].sort((a, b) => {
+    const dir = currentSort.ascending ? 1 : -1;
+    if (currentSort.key === 'rarity') {
+      const order = ['common', 'rare', 'epic', 'legendary'];
+      return (order.indexOf(a.rarity.toLowerCase()) - order.indexOf(b.rarity.toLowerCase())) * dir;
     }
-    if(state.currentSort.key==='element'){
-      return (a.element.localeCompare(b.element)||a.name.localeCompare(b.name))*dir;
+    if (currentSort.key === 'element') {
+      if (a.element === b.element)
+        return a.name.localeCompare(b.name) * dir;
+      return a.element.localeCompare(b.element) * dir;
     }
-    return a.name.localeCompare(b.name)*dir;
+    return a.name.localeCompare(b.name) * dir;
   });
 
-  sorted.forEach((m,i)=>{
-    const card=document.createElement('div');
-    card.className='monster-card shimmer pulse';
-    card.setAttribute('data-loaded','true');
-    card.setAttribute('data-rarity', (m.rarity||'').toLowerCase());
-    card.style.borderImageSource=`linear-gradient(135deg, ${getRarityColor(m.rarity)}, rgba(255,255,255,0.2))`;
+  sorted.forEach((m, idx) => {
+    const card = document.createElement('div');
+    card.className = 'monster-card shimmer pulse';
+    card.setAttribute('data-loaded', 'true');
+    card.setAttribute('data-rarity', (m.rarity || '').toLowerCase());
 
-    card.innerHTML=`
-      <img src="${m.image||'/monsters/placeholder.png'}" alt="${m.name}" onerror="this.onerror=null;this.src='/monsters/placeholder.png';">
-      <h3 style="color:${elementColors[m.element]||'#555'}">${m.name}</h3>
+    // Get rarity color
+    const rarityColor = getRarityColor(m.rarity);
+
+    // Apply rarity-colored border
+    card.style.borderImageSource = `linear-gradient(135deg, ${rarityColor}, rgba(255,255,255,0.2))`;
+
+    // Apply shimmer color with optional alpha based on rarity intensity
+    let alpha = 0.08; // common
+    switch ((m.rarity || '').toLowerCase()) {
+      case 'rare': alpha = 0.12; break;
+      case 'epic': alpha = 0.16; break;
+      case 'legendary': alpha = 0.22; break;
+    }
+    const shimmerColor = rarityColor.startsWith('#') 
+      ? hexToRgba(rarityColor, alpha) 
+      : `rgba(${rarityColor},${alpha})`;
+    card.style.setProperty('--shimmer-color', shimmerColor);
+
+    // Set drop shadow to match rarity
+    .monster-card[data-rarity="common"] img { filter: drop-shadow(0 0 6px #4CAF50); }
+    .monster-card[data-rarity="rare"] img { filter: drop-shadow(0 0 6px #2196F3); }
+    .monster-card[data-rarity="epic"] img { filter: drop-shadow(0 0 6px #9C27B0); }
+    .monster-card[data-rarity="legendary"] img { filter: drop-shadow(0 0 6px #FF9800); }
+
+
+    // Inner HTML for monster card
+    card.innerHTML = `
+      <img src="${m.image || '/monsters/placeholder.png'}" 
+           alt="${m.name}" 
+           onerror="this.onerror=null;this.src='/monsters/placeholder.png';">
+      <h3 style="color:${elementColors[m.element] || '#555'}">${m.name}</h3>
       <small>${m.rarity.toUpperCase()}</small>
     `;
-    card.addEventListener('click',()=>openMonsterModal(m));
-    grid.appendChild(card);
-    card.style.animationDelay=`${i*45}ms`;
+
+    // Click opens modal
+    card.addEventListener('click', () => openMonsterModal(m));
+
+    // Add tiny staggered entrance animation
+    card.style.animationDelay = `${idx * 45}ms`;
+
+    gridEl.appendChild(card);
   });
+
+  // Utility function to convert hex to rgba
+  function hexToRgba(hex, alpha = 1) {
+    hex = hex.replace('#', '');
+    if (hex.length === 3) hex = hex.split('').map(ch => ch + ch).join('');
+    const int = parseInt(hex, 16);
+    const r = (int >> 16) & 255;
+    const g = (int >> 8) & 255;
+    const b = int & 255;
+    return `rgba(${r},${g},${b},${alpha})`;
+  }
 }
+
 
 /* -------------------------
    FETCH MONSTERS
