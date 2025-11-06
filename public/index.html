@@ -17,14 +17,23 @@
       --card-radius: 16px;
       --shadow-glow: 0 0 30px rgba(139,92,246,0.18), inset 0 0 40px rgba(139,92,246,0.035);
       --glass-border: 1px solid rgba(255,255,255,0.04);
+
+      /* ✨ ADDED: coalition tint fallbacks (will be overwritten dynamically) */
+      --coalition-rgb: 139,92,246;
+      --coalition-10: rgba(139,92,246,0.10);
+      --coalition-06: rgba(139,92,246,0.06);
+      --coalition-03: rgba(139,92,246,0.03);
+      --coalition-18: rgba(139,92,246,0.18);
     }
 
     html,body{height:100%;}
     body{
       margin:0; padding:28px; font-family: Inter, 'Segoe UI', system-ui, -apple-system, 'Helvetica Neue', Arial;
-      background: radial-gradient(600px 400px at 10% 10%, rgba(107,33,168,0.08), transparent 8%),
-                  radial-gradient(400px 300px at 90% 90%, rgba(139,92,246,0.06), transparent 8%),
-                  var(--bg);
+      /* ✨ ADDED: background uses coalition tints */
+      background:
+        radial-gradient(600px 400px at 10% 10%, var(--coalition-06), transparent 8%),
+        radial-gradient(400px 300px at 90% 90%, var(--coalition-03), transparent 8%),
+        var(--bg);
       color: #e6e6ee; -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
       -webkit-touch-callout:none; -ms-text-size-adjust:100%;
       scroll-behavior: smooth;
@@ -33,8 +42,10 @@
     /* subtle animated aura around the page */
     .page-aura{
       pointer-events:none; position:fixed; inset:0; z-index:0; mix-blend-mode:screen;
-      background: radial-gradient(circle at 10% 10%, rgba(139,92,246,0.06), transparent 10%),
-                  radial-gradient(circle at 90% 80%, rgba(99,102,241,0.05), transparent 10%);
+      /* ✨ ADDED: page aura uses coalition tint variables */
+      background:
+        radial-gradient(circle at 10% 10%, var(--coalition-10), transparent 10%),
+        radial-gradient(circle at 90% 80%, var(--coalition-06), transparent 10%);
       filter: blur(24px) saturate(1.2);
     }
 
@@ -141,6 +152,38 @@
     .shimmer::after{content:''; position:absolute; left:-120%; top:0; width:120%; height:100%; transform:skewX(-12deg); background:linear-gradient(90deg, transparent, rgba(255,255,255,0.03), transparent); animation: shimmer 2.4s linear infinite}
     @keyframes shimmer{100%{left:120%}}
 
+    /* ✨ ADDED: Enhanced shimmer + rarity shine (full animated overlay on hover) */
+    .monster-card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      background: radial-gradient(circle at 50% 0%, rgba(255,255,255,0.09), transparent 55%);
+      opacity: 0;
+      transition: opacity 0.35s ease, transform 0.35s ease;
+      pointer-events: none;
+      transform: translateZ(0) scale(1);
+      mix-blend-mode: screen;
+    }
+    .monster-card:hover::before {
+      opacity: 1;
+      transform: translateZ(0) scale(1.02);
+    }
+
+    /* Rarity hover glows */
+    .monster-card[data-rarity="common"]:hover { box-shadow: 0 16px 48px rgba(76,175,80,0.18); }
+    .monster-card[data-rarity="rare"]:hover { box-shadow: 0 18px 56px rgba(33,150,243,0.24); }
+    .monster-card[data-rarity="epic"]:hover { box-shadow: 0 20px 68px rgba(156,39,176,0.32); }
+    .monster-card[data-rarity="legendary"]:hover { box-shadow: 0 22px 86px rgba(255,152,0,0.44); }
+
+    /* Make shimmer more pronounced (faster sweep) */
+    .shimmer::after {
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.10), rgba(255,255,255,0.22), transparent);
+      animation: shimmer 1.6s linear infinite;
+      left: -140%;
+      width: 160%;
+    }
+    @keyframes shimmer{100%{left:140%}}
   </style>
 </head>
 <body>
@@ -297,6 +340,8 @@ function renderMonsters(monsters) {
     const card = document.createElement('div');
     card.className = 'monster-card shimmer pulse';
     card.setAttribute('data-loaded', 'true');
+    /* ✨ ADDED: set rarity attribute for CSS effects */
+    card.setAttribute('data-rarity', (m.rarity || '').toLowerCase());
     card.style.borderColor = getRarityColor(m.rarity);
     card.innerHTML = `
       <img src="${m.image || '/monsters/placeholder.png'}" 
@@ -378,6 +423,35 @@ async function fetchMonsters() {
         btn.style.borderColor = coalitionColor;
       }
     });
+
+    /* ✨ ADDED: apply coalition color globally (tints background, aura, accents) */
+    (function applyCoalitionTheme(hex) {
+      // convert hex like "#aabbcc" to "r,g,b"
+      function hexToRgb(h) {
+        if (!h) return null;
+        let hex = h.replace('#','').trim();
+        if (hex.length === 3) hex = hex.split('').map(ch => ch+ch).join('');
+        const int = parseInt(hex, 16);
+        const r = (int >> 16) & 255;
+        const g = (int >> 8) & 255;
+        const b = int & 255;
+        return `${r},${g},${b}`;
+      }
+      const rgb = hexToRgb(hex) || '128,80,36';
+      // set main accent vars
+      document.documentElement.style.setProperty('--accent', hex);
+      document.documentElement.style.setProperty('--accent-2', hex);
+      // coalition tint variables used by CSS (with alpha)
+      document.documentElement.style.setProperty('--coalition-rgb', rgb);
+      document.documentElement.style.setProperty('--coalition-10', `rgba(${rgb},0.10)`);
+      document.documentElement.style.setProperty('--coalition-06', `rgba(${rgb},0.06)`);
+      document.documentElement.style.setProperty('--coalition-03', `rgba(${rgb},0.03)`);
+      document.documentElement.style.setProperty('--coalition-18', `rgba(${rgb},0.18)`);
+      // shadow glow using coalition color
+      document.documentElement.style.setProperty('--shadow-glow', `0 0 30px rgba(${rgb},0.22), inset 0 0 40px rgba(${rgb},0.08)`);
+      // optional: also tint page aura seed slightly stronger
+      document.documentElement.style.setProperty('--page-aura-strong', `rgba(${rgb},0.12)`);
+    })(coalitionColor);
 
     renderMonsters(allMonsters);
   } catch (err) {
