@@ -1,324 +1,244 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Intramon</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <style>
-    /* BASE LAYOUT */
-    :root{
-      --bg:#050007;
-      --panel: rgba(255,255,255,0.03);
-      --soft: rgba(255,255,255,0.04);
-      --glass: rgba(255,255,255,0.02);
-      --accent: #8b5cf6; /* purple */
-      --accent-2: #6d28d9;
-      --muted: #b9b9c6;
-      --card-radius: 16px;
-      --shadow-glow: 0 0 30px rgba(139,92,246,0.18), inset 0 0 40px rgba(139,92,246,0.035);
-      --glass-border: 1px solid rgba(255,255,255,0.04);
+<meta charset="UTF-8">
+<title>Intramon</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  /* =========================
+     BASE LAYOUT & VARIABLES
+     ========================= */
+  :root {
+    --bg:#050007;
+    --panel: rgba(255,255,255,0.03);
+    --soft: rgba(255,255,255,0.04);
+    --glass: rgba(255,255,255,0.02);
+    --accent: #8b5cf6;
+    --accent-2: #6d28d9;
+    --muted: #b9b9c6;
+    --card-radius: 16px;
+    --shadow-glow: 0 0 30px rgba(139,92,246,0.18), inset 0 0 40px rgba(139,92,246,0.035);
+    --glass-border: 1px solid rgba(255,255,255,0.04);
+    --coalition-rgb: 139,92,246;
+    --coalition-10: rgba(139,92,246,0.10);
+    --coalition-06: rgba(139,92,246,0.06);
+    --coalition-03: rgba(139,92,246,0.03);
+    --coalition-18: rgba(139,92,246,0.18);
+  }
 
-      /* ✨ ADDED: coalition tint fallbacks (will be overwritten dynamically) */
-      --coalition-rgb: 139,92,246;
-      --coalition-10: rgba(139,92,246,0.10);
-      --coalition-06: rgba(139,92,246,0.06);
-      --coalition-03: rgba(139,92,246,0.03);
-      --coalition-18: rgba(139,92,246,0.18);
-    }
-
-    html,body{height:100%;}
-    body{
-      margin:0; padding:28px; font-family: Inter, 'Segoe UI', system-ui, -apple-system, 'Helvetica Neue', Arial;
-      /* ✨ ADDED: background uses coalition tints */
-      background:
+  html,body{height:100%;margin:0;padding:28px;font-family:Inter, 'Segoe UI', system-ui, -apple-system, 'Helvetica Neue', Arial;color:#e6e6ee;scroll-behavior:smooth;background:
         radial-gradient(600px 400px at 10% 10%, var(--coalition-06), transparent 8%),
         radial-gradient(400px 300px at 90% 90%, var(--coalition-03), transparent 8%),
         var(--bg);
-      color: #e6e6ee; -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
-      -webkit-touch-callout:none; -ms-text-size-adjust:100%;
-      scroll-behavior: smooth;
-    }
+      -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;}
 
-    /* subtle animated aura around the page */
-    .page-aura{
-      pointer-events:none; position:fixed; inset:0; z-index:0; mix-blend-mode:screen;
-      /* ✨ ADDED: page aura uses coalition tint variables */
-      background:
-        radial-gradient(circle at 10% 10%, var(--coalition-10), transparent 10%),
-        radial-gradient(circle at 90% 80%, var(--coalition-06), transparent 10%);
-      filter: blur(24px) saturate(1.2);
-    }
+  .page-aura{
+    pointer-events:none; position:fixed; inset:0; z-index:0; mix-blend-mode:screen;
+    background:
+      radial-gradient(circle at 10% 10%, var(--coalition-10), transparent 10%),
+      radial-gradient(circle at 90% 80%, var(--coalition-06), transparent 10%);
+    filter: blur(24px) saturate(1.2);
+  }
 
-    h1{font-weight:700; margin:0 0 6px; letter-spacing:-0.02em; color: #efeaff; font-size:20px}
+  h1{font-weight:700;margin:0 0 6px;letter-spacing:-0.02em;color:#efeaff;font-size:20px}
 
-    /* TOP BAR */
-    #top-bar{
-      display:flex; align-items:center; justify-content:space-between;
-      gap:12px; padding:12px 16px; border-radius:12px;
-      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
-      border: var(--glass-border); box-shadow: var(--shadow-glow);
-      max-width:1100px; margin:0 auto 22px; position:relative; z-index:5;
-      backdrop-filter: blur(8px) saturate(1.2);
-      transform: translateZ(0);
-    }
-    #top-bar.hidden{display:none}
+  /* TOP BAR */
+  #top-bar{
+    display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px 16px;
+    border-radius:12px;background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+    border: var(--glass-border); box-shadow: var(--shadow-glow); max-width:1100px; margin:0 auto 22px; position:relative; z-index:5;
+    backdrop-filter: blur(8px) saturate(1.2); transform: translateZ(0);
+  }
+  #top-bar.hidden{display:none}
+  #username-display{font-weight:700;color:#f3ecff}
 
-    #username-display{font-weight:700; color:#f3ecff}
+  /* layout */
+  #main-container{display:flex; gap:22px; max-width:1200px; margin:0 auto; align-items:flex-start; z-index:4;}
 
-    /* layout */
-    #main-container{display:flex; gap:22px; max-width:1200px; margin:0 auto; align-items:flex-start; z-index:4;}
+  /* Leaderboard */
+  #leaderboard{width:230px;padding:16px;border-radius:12px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border:var(--glass-border);box-shadow:0 8px 30px rgba(11,2,22,0.7);}
+  #leaderboard h3{margin:0 0 10px;color:#efeaff}
+  #leaderboard-list{color:var(--muted);padding-left:18px;margin:0;}
+  #leaderboard li{margin:8px 0;font-size:14px}
 
-    /* Leaderboard */
-    #leaderboard{width:230px; padding:16px; border-radius:12px; background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); border:var(--glass-border); box-shadow: 0 8px 30px rgba(11,2,22,0.7);}
-    #leaderboard h3{margin:0 0 10px; color:#efeaff}
-    #leaderboard-list{color:var(--muted); padding-left:18px; margin:0;}
-    #leaderboard li{margin:8px 0; font-size:14px}
+  /* Monster Grid */
+  #monster-grid{display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:20px; width:100%; padding:12px; align-self:stretch;}
+  .monster-card{
+    position:relative; overflow:visible; cursor:pointer; padding:18px 14px; border-radius:var(--card-radius);
+    background: linear-gradient(180deg, rgba(255,255,255,0.018), rgba(255,255,255,0.01));
+    border:2px solid; border-image-slice:1;
+    box-shadow: 0 6px 26px rgba(2,2,6,0.8); transition: transform .28s cubic-bezier(.2,.9,.2,1), box-shadow .28s, filter .28s;
+    display:flex; flex-direction:column; align-items:center; gap:8px; text-align:center; transform-origin:center; will-change:transform;
+  }
+  .monster-card[data-loaded="true"]{animation: floatIn .6s cubic-bezier(.2,.9,.2,1) both}
+  @keyframes floatIn{from{opacity:0; transform: translateY(18px) scale(.98)} to{opacity:1; transform:translateY(0) scale(1)}}
+  .monster-card:hover{
+    transform: translateY(-8px) scale(1.04) perspective(600px) rotateX(2deg) translateZ(4px);
+    filter: saturate(1.05) drop-shadow(0 8px 40px rgba(107,33,168,0.08));
+  }
+  .monster-card img{width:96px;height:96px;object-fit:contain;transition: transform .5s;}
+  .monster-card:hover img{transform: translateY(-6px) rotate(-3deg) scale(1.02)}
+  .monster-card h3{margin:0;font-size:16px;letter-spacing:-0.02em}
+  .monster-card small{color:var(--muted);font-weight:600}
 
-    /* MONSTER GRID */
-    #monster-grid{
-      display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:20px; width:100%;
-      padding:12px; align-self:stretch;
-    }
+  /* Buttons */
+  button{appearance:none;border:none;padding:8px 12px;border-radius:10px;font-weight:700;cursor:pointer;transition: transform .14s ease, opacity .12s ease;}
+  button:active{transform:scale(.98)}
+  .btn-primary{background:linear-gradient(180deg,var(--accent), var(--accent-2)); color:white; box-shadow:0 6px 22px rgba(107,33,168,0.18)}
 
-    .monster-card{
-      position:relative; overflow:visible; cursor:pointer; padding:18px 14px; border-radius:var(--card-radius);
-      background: linear-gradient(180deg, rgba(255,255,255,0.018), rgba(255,255,255,0.01));
-      border: 1px solid rgba(255,255,255,0.03); box-shadow: 0 6px 26px rgba(2,2,6,0.8);
-      transition: transform .28s cubic-bezier(.2,.9,.2,1), box-shadow .28s, filter .28s;
-      display:flex; flex-direction:column; align-items:center; gap:8px; text-align:center;
-      transform-origin:center; will-change:transform;
-    }
+  /* Inputs */
+  input{background:transparent;border:1px solid rgba(255,255,255,0.05);padding:8px 10px;border-radius:10px;color:#efeaff;outline:none}
+  input::placeholder{color:#9b94a8}
 
-    /* entrance animation */
-    .monster-card[data-loaded="true"]{animation: floatIn .6s cubic-bezier(.2,.9,.2,1) both}
-    @keyframes floatIn{from{opacity:0; transform: translateY(18px) scale(.98)} to{opacity:1; transform:translateY(0) scale(1)}}
+  /* Modals */
+  .modal{display:none;position:fixed;inset:0;background:linear-gradient(180deg, rgba(0,0,0,0.55), rgba(0,0,0,0.6));justify-content:center;align-items:center;padding:20px;z-index:999}
+  .modal.show{display:flex}
+  .modal-content{width:min(420px,95%);border-radius:18px;padding:22px;position:relative;background:linear-gradient(180deg, rgba(16,7,28,0.9), rgba(18,9,34,0.95));border:1px solid rgba(139,92,246,0.08);box-shadow:0 40px 120px rgba(7,3,18,0.9)}
+  .modal-content img{width:160px;height:160px;object-fit:contain;margin:0 auto 12px;display:block}
+  .close-btn{position:absolute;right:14px;top:10px;font-size:20px;cursor:pointer;color:#cfc9ff}
+  .stats p{margin:6px 0;color:#e9e6ff}
+  #inbox-count{display:block;margin-top:10px;color:#c9c2e6}
+  #crystal-counter{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));padding:6px 10px;border-radius:10px;display:flex;align-items:center;gap:8px}
 
-    .monster-card:hover{
-      transform: translateY(-8px) scale(1.04) perspective(600px) rotateX(2deg) translateZ(4px);
-      box-shadow: 0 18px 60px rgba(99,66,255,0.18);
-      filter: saturate(1.05) drop-shadow(0 8px 40px rgba(107,33,168,0.08));
-    }
+  /* Mobile */
+  @media (max-width:840px){
+    #main-container{flex-direction:column;}
+    #leaderboard{width:100%; order:2}
+    #monster-grid{order:1}
+  }
 
-    .monster-card img{width:96px; height:96px; object-fit:contain; transition: transform .5s;}
-    .monster-card:hover img{transform: translateY(-6px) rotate(-3deg) scale(1.02)}
+  /* Scrollbar */
+  ::-webkit-scrollbar{height:10px;width:10px}
+  ::-webkit-scrollbar-thumb{background: linear-gradient(180deg, rgba(139,92,246,0.18), rgba(99,102,241,0.18)); border-radius:999px}
+  ::-webkit-scrollbar-track{background:transparent}
 
-    .monster-card h3{margin:0; font-size:16px; letter-spacing:-0.02em}
-    .monster-card small{color:var(--muted); font-weight:600}
-
-    /* Buttons */
-    button{appearance:none; border:none; padding:8px 12px; border-radius:10px; font-weight:700; cursor:pointer; transition: transform .14s ease, opacity .12s ease;}
-    button:active{transform:scale(.98)}
-
-    /* primary purple buttons */
-    .btn-primary{background:linear-gradient(180deg,var(--accent), var(--accent-2)); color:white; box-shadow: 0 6px 22px rgba(107,33,168,0.18)}
-
-    /* input */
-    input{background:transparent; border:1px solid rgba(255,255,255,0.05); padding:8px 10px; border-radius:10px; color:#efeaff; outline:none}
-    input::placeholder{color:#9b94a8}
-
-    /* MODALS */
-    .modal{display:none; position:fixed; inset:0; background:linear-gradient(180deg, rgba(0,0,0,0.55), rgba(0,0,0,0.6)); justify-content:center; align-items:center; padding:20px; z-index:999}
-    .modal.show{display:flex}
-    .modal-content{width:min(420px,95%); border-radius:18px; padding:22px; position:relative; background:linear-gradient(180deg, rgba(16,7,28,0.9), rgba(18,9,34,0.95)); border:1px solid rgba(139,92,246,0.08); box-shadow: 0 40px 120px rgba(7,3,18,0.9)}
-    .modal-content img{width:160px;height:160px;object-fit:contain;margin:0 auto 12px; display:block}
-    .close-btn{position:absolute; right:14px; top:10px; font-size:20px; cursor:pointer; color:#cfc9ff}
-
-    .stats p{margin:6px 0; color:#e9e6ff}
-
-    /* INBOX small */
-    #inbox-count{display:block; margin-top:10px; color:#c9c2e6}
-
-    /* crystal counter */
-    #crystal-counter{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); padding:6px 10px; border-radius:10px; display:flex; align-items:center; gap:8px}
-
-    /* smaller layout at mobile */
-    @media (max-width:840px){
-      #main-container{flex-direction:column;}
-      #leaderboard{width:100%; order:2}
-      #monster-grid{order:1}
-    }
-
-    /* scrollbar styling */
-    ::-webkit-scrollbar{height:10px;width:10px}
-    ::-webkit-scrollbar-thumb{background: linear-gradient(180deg, rgba(139,92,246,0.18), rgba(99,102,241,0.18)); border-radius:999px}
-    ::-webkit-scrollbar-track{background:transparent}
-
-    /* subtle pulsing effect for logged-in items */
-    .pulse{animation: pulseGlow 3.6s ease-in-out infinite}
-    @keyframes pulseGlow{0%{box-shadow:0 6px 26px rgba(99,66,255,0.08)}50%{box-shadow:0 18px 60px rgba(99,66,255,0.14)}100%{box-shadow:0 6px 26px rgba(99,66,255,0.08)}}
-
-    /* little floating shimmer */
-    .shimmer{position:relative; overflow:hidden}
-    .shimmer::after{content:''; position:absolute; left:-120%; top:0; width:120%; height:100%; transform:skewX(-12deg); background:linear-gradient(90deg, transparent, rgba(255,255,255,0.03), transparent); animation: shimmer 2.4s linear infinite}
-    @keyframes shimmer{100%{left:120%}}
-
-    /* ✨ ADDED: Enhanced shimmer + rarity shine (full animated overlay on hover) */
-    .monster-card::before {
-      content: "";
-      position: absolute;
-      inset: 0;
-      border-radius: inherit;
-      background: radial-gradient(circle at 50% 0%, rgba(255,255,255,0.09), transparent 55%);
-      opacity: 0;
-      transition: opacity 0.35s ease, transform 0.35s ease;
-      pointer-events: none;
-      transform: translateZ(0) scale(1);
-      mix-blend-mode: screen;
-    }
-    .monster-card:hover::before {
-      opacity: 1;
-      transform: translateZ(0) scale(1.02);
-    }
-
-    /* Rarity hover glows */
-    .monster-card[data-rarity="common"]:hover { box-shadow: 0 16px 48px rgba(76,175,80,0.18); }
-    .monster-card[data-rarity="rare"]:hover { box-shadow: 0 18px 56px rgba(33,150,243,0.24); }
-    .monster-card[data-rarity="epic"]:hover { box-shadow: 0 20px 68px rgba(156,39,176,0.32); }
-    .monster-card[data-rarity="legendary"]:hover { box-shadow: 0 22px 86px rgba(255,152,0,0.44); }
-
-    /* Make shimmer more pronounced (faster sweep) */
-    .shimmer::after {
-      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.10), rgba(255,255,255,0.22), transparent);
-      animation: shimmer 1.6s linear infinite;
-      left: -140%;
-      width: 160%;
-    }
-    /* Rarity-colored border gradient */
-.monster-card {
-  border-image-slice: 1;
-  border-width: 2px;
-  border-style: solid;
-  border-image-source: linear-gradient(135deg, #4CAF50, #2196F3, #9C27B0, #FF9800); /* fallback, overwritten by JS per card */
-}
-
-/* Rarity-tinted shimmer */
-.monster-card.shimmer::after {
-  background: linear-gradient(
-    90deg,
-    transparent,
-    var(--shimmer-color, rgba(255,255,255,0.03)),
-    transparent
-  );
-}
-
-    @keyframes shimmer{100%{left:140%}}
-  </style>
+  /* Shimmer & Pulse Effects */
+  .pulse{animation: pulseGlow 3.6s ease-in-out infinite}
+  @keyframes pulseGlow{0%{box-shadow:0 6px 26px rgba(99,66,255,0.08)}50%{box-shadow:0 18px 60px rgba(99,66,255,0.14)}100%{box-shadow:0 6px 26px rgba(99,66,255,0.08)}}
+  .shimmer{position:relative;overflow:hidden}
+  .shimmer::after{
+    content:''; position:absolute; left:-140%; top:0; width:160%; height:100%; transform:skewX(-12deg);
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.10), rgba(255,255,255,0.22), transparent);
+    animation: shimmer 1.6s linear infinite;
+  }
+  @keyframes shimmer{100%{left:140%}}
+</style>
 </head>
 <body>
-  <div class="page-aura" aria-hidden="true"></div>
+<div class="page-aura" aria-hidden="true"></div>
 
-  <header id="top-bar" style="display:none;">
-    <div style="display:flex; align-items:center; gap:12px;">
-      <div style="display:flex; flex-direction:column; align-items:flex-start;">
-        <h1>Intramon</h1>
-        <div id="username-display">&nbsp;</div>
-      </div>
-    </div>
-
-    <div style="display:flex; align-items:center; gap:10px;">
-      <button id="check-inbox-btn" class="btn-primary">Check Inbox</button>
-
-      <div style="display:flex; gap:8px; align-items:center;">
-        <input id="claim-code-input" placeholder="Enter claim code">
-        <button id="claim-code-btn" class="btn-primary">Redeem</button>
-      </div>
-
-      <div id="sort-controls" style="display:flex; align-items:center; gap:8px;">
-        <label for="sort-select" style="color:var(--muted); font-weight:600">Sort</label>
-        <select id="sort-select" style="background:transparent; color:#efeaff; border:1px solid rgba(255,255,255,0.03); padding:8px 10px; border-radius:10px">
-          <option value="name">Name</option>
-          <option value="rarity">Rarity</option>
-          <option value="element">Element</option>
-        </select>
-        <button id="sort-order-btn" title="Toggle order">⬆️</button>
-      </div>
-
-      <div id="crystal-counter" style="margin-left:18px;">
-        💎 <span id="crystal-amount">0</span>
-      </div>
-    </div>
-  </header>
-
-  <main id="main-container">
-    <aside id="leaderboard">
-      <h3>Leaderboard</h3>
-      <ol id="leaderboard-list"></ol>
-      <div style="display:flex; justify-content:flex-end; margin-top:12px;">
-        <button id="leaderboard-refresh-btn" class="btn-primary" style="padding:8px 10px; font-size:13px">Refresh</button>
-      </div>
-    </aside>
-
-    <section style="flex:1">
-      <div id="monster-grid"></div>
-      <div style="display:flex; justify-content:center; margin-top:18px;">
-        <button id="login-btn" class="btn-primary">Login via 42</button>
-      </div>
-    </section>
-  </main>
-
-  <!-- MONSTER MODAL -->
-  <div id="monster-modal" class="modal" aria-hidden="true">
-    <div class="modal-content">
-      <span class="close-btn">&times;</span>
-      <img id="modal-img" src="" alt="Monster">
-      <h2 id="modal-name"></h2>
-      <small id="modal-rarity"></small>
-      <div class="stats">
-        <p><b>HP:</b> <span id="modal-hp"></span></p>
-        <p><b>Attack:</b> <span id="modal-attack"></span></p>
-        <p><b>Defense:</b> <span id="modal-defense"></span></p>
-      </div>
-      <div style="display:flex; gap:10px; justify-content:center; margin-top:12px;">
-        <button id="gift-btn" class="btn-primary">Gift to Player</button>
-      </div>
+<header id="top-bar" class="hidden">
+  <div style="display:flex; align-items:center; gap:12px;">
+    <div style="display:flex; flex-direction:column; align-items:flex-start;">
+      <h1>Intramon</h1>
+      <div id="username-display">&nbsp;</div>
     </div>
   </div>
 
-  <!-- INBOX MODAL -->
-  <div id="inbox-modal" class="modal" aria-hidden="true">
-    <div class="modal-content">
-      <span class="close-btn">&times;</span>
-      <h3 id="inbox-reason"></h3>
-      <img id="inbox-img" src="" alt="Inbox Monster">
-      <h2 id="inbox-name"></h2>
-      <small id="inbox-rarity"></small>
-      <div style="display:flex; gap:10px; justify-content:center; margin-top:12px;">
-        <button id="claim-btn" class="btn-primary">Claim Monster</button>
-        <button id="claim-all-btn" class="btn-primary">Claim All</button>
-      </div>
-      <span id="inbox-count"></span>
+  <div style="display:flex; align-items:center; gap:10px;">
+    <button id="check-inbox-btn" class="btn-primary">Check Inbox</button>
+
+    <div style="display:flex; gap:8px; align-items:center;">
+      <input id="claim-code-input" placeholder="Enter claim code">
+      <button id="claim-code-btn" class="btn-primary">Redeem</button>
+    </div>
+
+    <div id="sort-controls" style="display:flex; align-items:center; gap:8px;">
+      <label for="sort-select" style="color:var(--muted); font-weight:600">Sort</label>
+      <select id="sort-select" style="background:transparent; color:#efeaff; border:1px solid rgba(255,255,255,0.03); padding:8px 10px; border-radius:10px">
+        <option value="name">Name</option>
+        <option value="rarity">Rarity</option>
+        <option value="element">Element</option>
+      </select>
+      <button id="sort-order-btn" title="Toggle order">⬆️</button>
+    </div>
+
+    <div id="crystal-counter" style="margin-left:18px;">
+      💎 <span id="crystal-amount">0</span>
     </div>
   </div>
+</header>
+
+<main id="main-container">
+  <aside id="leaderboard">
+    <h3>Leaderboard</h3>
+    <ol id="leaderboard-list"></ol>
+    <div style="display:flex; justify-content:flex-end; margin-top:12px;">
+      <button id="leaderboard-refresh-btn" class="btn-primary" style="padding:8px 10px; font-size:13px">Refresh</button>
+    </div>
+  </aside>
+
+  <section style="flex:1">
+    <div id="monster-grid"></div>
+    <div style="display:flex; justify-content:center; margin-top:18px;">
+      <button id="login-btn" class="btn-primary">Login via 42</button>
+    </div>
+  </section>
+</main>
+
+<!-- Monster Modal -->
+<div id="monster-modal" class="modal" aria-hidden="true">
+  <div class="modal-content">
+    <span class="close-btn">&times;</span>
+    <img id="modal-img" src="" alt="Monster">
+    <h2 id="modal-name"></h2>
+    <small id="modal-rarity"></small>
+    <div class="stats">
+      <p><b>HP:</b> <span id="modal-hp"></span></p>
+      <p><b>Attack:</b> <span id="modal-attack"></span></p>
+      <p><b>Defense:</b> <span id="modal-defense"></span></p>
+    </div>
+    <div style="display:flex; gap:10px; justify-content:center; margin-top:12px;">
+      <button id="gift-btn" class="btn-primary">Gift to Player</button>
+    </div>
+  </div>
+</div>
+
+<!-- Inbox Modal -->
+<div id="inbox-modal" class="modal" aria-hidden="true">
+  <div class="modal-content">
+    <span class="close-btn">&times;</span>
+    <h3 id="inbox-reason"></h3>
+    <img id="inbox-img" src="" alt="Inbox Monster">
+    <h2 id="inbox-name"></h2>
+    <small id="inbox-rarity"></small>
+    <div style="display:flex; gap:10px; justify-content:center; margin-top:12px;">
+      <button id="claim-btn" class="btn-primary">Claim Monster</button>
+      <button id="claim-all-btn" class="btn-primary">Claim All</button>
+    </div>
+    <span id="inbox-count"></span>
+  </div>
+</div>
 
 <script>
-// ---------- KEEP ORIGINAL FRONTEND LOGIC INTACT ----------
-// (No endpoints or backend changes were made — this script is preserved so your backend still works.)
+// =========================
+// MODULED FRONTEND LOGIC
+// =========================
 
-const getRarityColor = (rarity) => {
-  switch (rarity?.toLowerCase()) {
+const state = {
+  monsters: [],
+  currentSort: { key: 'name', ascending: true },
+  inboxQueue: [],
+  inboxIndex: 0
+};
+
+const elementColors = { Electro:'#FFD700', Water:'#00BFFF', Fire:'#FF4500', Ice:'#00FFFF', Plant:'#32CD32', Ground:'#8B4513' };
+
+function getRarityColor(rarity) {
+  switch(rarity?.toLowerCase()){
     case 'common': return '#4CAF50';
     case 'rare': return '#2196F3';
     case 'epic': return '#9C27B0';
     case 'legendary': return '#FF9800';
     default: return '#555';
   }
-};
+}
 
-const elementColors = {
-  Electro: '#FFD700',
-  Water: '#00BFFF',
-  Fire: '#FF4500',
-  Ice: '#00FFFF',
-  Plant: '#32CD32',
-  Ground: '#8B4513'
-};
-
-let allMonsters = [];
-let currentSort = { key: 'name', ascending: true };
-
-// --- Monster Modal ---
-const monsterModal = document.getElementById('monster-modal');
-function openMonsterModal(monster) {
+/* -------------------------
+   MONSTER MODAL FUNCTIONS
+------------------------- */
+const monsterModalEl = document.getElementById('monster-modal');
+function openMonsterModal(monster){
   document.getElementById('modal-img').src = monster.image || '/monsters/placeholder.png';
   document.getElementById('modal-name').textContent = monster.name;
   document.getElementById('modal-rarity').textContent = monster.rarity.toUpperCase();
@@ -326,374 +246,223 @@ function openMonsterModal(monster) {
   document.getElementById('modal-hp').textContent = monster.hp;
   document.getElementById('modal-attack').textContent = monster.attack;
   document.getElementById('modal-defense').textContent = monster.defense;
-  monsterModal.classList.add('show');
+  monsterModalEl.classList.add('show');
   document.getElementById('gift-btn').onclick = () => giftMonster(monster);
 }
-function closeMonsterModal() { monsterModal.classList.remove('show'); }
-document.querySelector('#monster-modal .close-btn').addEventListener('click', closeMonsterModal);
-monsterModal.addEventListener('click', e => { if (e.target === monsterModal) closeMonsterModal(); });
+function closeMonsterModal(){ monsterModalEl.classList.remove('show'); }
+monsterModalEl.querySelector('.close-btn').addEventListener('click', closeMonsterModal);
+monsterModalEl.addEventListener('click', e => { if(e.target===monsterModalEl) closeMonsterModal(); });
 
-// --- Render Monsters ---
-function renderMonsters(monsters) {
-  const gridEl = document.getElementById('monster-grid');
-  gridEl.innerHTML = '';
-
-  // Sort
-  const sorted = [...monsters].sort((a, b) => {
-    const dir = currentSort.ascending ? 1 : -1;
-    if (currentSort.key === 'rarity') {
-      const order = ['common', 'rare', 'epic', 'legendary'];
-      return (order.indexOf(a.rarity.toLowerCase()) - order.indexOf(b.rarity.toLowerCase())) * dir;
+/* -------------------------
+   RENDER MONSTERS
+------------------------- */
+function renderMonsters(monsters){
+  const grid = document.getElementById('monster-grid');
+  grid.innerHTML='';
+  const sorted = [...monsters].sort((a,b)=>{
+    const dir = state.currentSort.ascending ? 1 : -1;
+    if(state.currentSort.key==='rarity'){
+      const order=['common','rare','epic','legendary'];
+      return (order.indexOf(a.rarity.toLowerCase())-order.indexOf(b.rarity.toLowerCase()))*dir;
     }
-    if (currentSort.key === 'element') {
-      if (a.element === b.element)
-        return a.name.localeCompare(b.name) * dir;
-      return a.element.localeCompare(b.element) * dir;
+    if(state.currentSort.key==='element'){
+      return (a.element.localeCompare(b.element)||a.name.localeCompare(b.name))*dir;
     }
-    // Default: name
-    return a.name.localeCompare(b.name) * dir;
+    return a.name.localeCompare(b.name)*dir;
   });
 
-  sorted.forEach((m, idx) => {
-    const card = document.createElement('div');
-    card.className = 'monster-card shimmer pulse';
-    card.setAttribute('data-loaded', 'true');
-    /* ✨ ADDED: set rarity attribute for CSS effects */
-    card.setAttribute('data-rarity', (m.rarity || '').toLowerCase());
-    // Set rarity-colored border gradient
-let rarityColor = getRarityColor(m.rarity);
-card.style.borderImageSource = `linear-gradient(135deg, ${rarityColor}, rgba(255,255,255,0.2))`;
+  sorted.forEach((m,i)=>{
+    const card=document.createElement('div');
+    card.className='monster-card shimmer pulse';
+    card.setAttribute('data-loaded','true');
+    card.setAttribute('data-rarity', (m.rarity||'').toLowerCase());
+    card.style.borderImageSource=`linear-gradient(135deg, ${getRarityColor(m.rarity)}, rgba(255,255,255,0.2))`;
 
-// Tint the shimmer sweep to match rarity
-let shimmerEl = card.querySelector('.shimmer::after') || card; // fallback
-card.style.setProperty('--shimmer-color', rarityColor);
-card.classList.add('shimmer');
-card.querySelector('img').style.filter = `drop-shadow(0 0 6px ${rarityColor})`;
-
-    card.innerHTML = `
-      <img src="${m.image || '/monsters/placeholder.png'}" 
-           alt="${m.name}" 
-           onerror="this.onerror=null;this.src='/monsters/placeholder.png';">
-      <h3 style="color:${elementColors[m.element] || '#555'}">${m.name}</h3>
+    card.innerHTML=`
+      <img src="${m.image||'/monsters/placeholder.png'}" alt="${m.name}" onerror="this.onerror=null;this.src='/monsters/placeholder.png';">
+      <h3 style="color:${elementColors[m.element]||'#555'}">${m.name}</h3>
       <small>${m.rarity.toUpperCase()}</small>
     `;
-    card.addEventListener('click', () => openMonsterModal(m));
-    gridEl.appendChild(card);
-
-    // tiny staggered entrance
-    card.style.animationDelay = `${idx * 45}ms`;
+    card.addEventListener('click',()=>openMonsterModal(m));
+    grid.appendChild(card);
+    card.style.animationDelay=`${i*45}ms`;
   });
 }
 
-// --- Fetch Monsters ---
-async function fetchMonsters() {
-  try {
-    const res = await fetch('/my-monsters');
-    if (!res.ok) return;
-    const data = await res.json();
-    allMonsters = data.monsters || [];
-    document.getElementById('username-display').textContent = `Logged in as: ${data.name}`;
-    renderMonsters(allMonsters);
-  } catch (err) {
-    console.error('Failed to fetch mons:', err);
+/* -------------------------
+   FETCH MONSTERS
+------------------------- */
+async function fetchMonsters(){
+  try{
+    const res=await fetch('/my-monsters');
+    if(!res.ok) return;
+    const data=await res.json();
+    state.monsters=data.monsters||[];
+    updateUserUI(data);
+    renderMonsters(state.monsters);
+  }catch(err){ console.error(err); }
+}
+
+/* -------------------------
+   USER/COALITION UI
+------------------------- */
+function updateUserUI(data){
+  const usernameEl=document.getElementById('username-display');
+  usernameEl.textContent=`Logged in as: ${data.name} (${data.coalitionName||'Unknown'})`;
+  document.getElementById('crystal-amount').textContent=data.crystals??0;
+
+  const coalitionColor=data.coalitionColor||'#802200';
+  const themedBtns=['check-inbox-btn','claim-code-btn','sort-order-btn','leaderboard-refresh-btn'];
+  themedBtns.forEach(id=>{
+    const btn=document.getElementById(id);
+    if(btn){ btn.style.backgroundColor=coalitionColor; btn.style.borderColor=coalitionColor; }
+  });
+
+  applyCoalitionTheme(coalitionColor);
+}
+
+function applyCoalitionTheme(hex){
+  function hexToRgb(h){
+    if(!h) return '128,80,36';
+    let hex=h.replace('#',''); if(hex.length===3) hex=hex.split('').map(c=>c+c).join('');
+    const int=parseInt(hex,16);
+    const r=(int>>16)&255,g=(int>>8)&255,b=int&255;
+    return `${r},${g},${b}`;
   }
+  const rgb=hexToRgb(hex);
+  document.documentElement.style.setProperty('--accent',hex);
+  document.documentElement.style.setProperty('--accent-2',hex);
+  document.documentElement.style.setProperty('--coalition-rgb',rgb);
+  document.documentElement.style.setProperty('--coalition-10',`rgba(${rgb},0.10)`);
+  document.documentElement.style.setProperty('--coalition-06',`rgba(${rgb},0.06)`);
+  document.documentElement.style.setProperty('--coalition-03',`rgba(${rgb},0.03)`);
+  document.documentElement.style.setProperty('--coalition-18',`rgba(${rgb},0.18)`);
+  document.documentElement.style.setProperty('--shadow-glow',`0 0 30px rgba(${rgb},0.22), inset 0 0 40px rgba(${rgb},0.08)`);
 }
 
-
-// --- Gift Monster ---
-async function giftMonster(monster) {
-  const toUsername = prompt('Enter receiver username:');
-  if (!toUsername) return;
-  try {
-    const userRes = await fetch(`/find-user/${toUsername}`);
-    const userData = await userRes.json();
-    if (!userData.exists) { alert('User not found'); return; }
-    const res = await fetch('/gift', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ toPlayerId: userData.playerId, offeredMonsters: [monster] })
-    });
-    const result = await res.json();
-    if (res.ok) { alert('Monster sent to inbox!'); closeMonsterModal(); fetchMonsters(); }
-    else { alert('Failed to gift: ' + (result.error || 'Unknown error')); }
-  } catch (err) { console.error(err); alert('Gift failed: ' + err.message); }
-}
-
-async function fetchMonsters() {
-  try {
-    const res = await fetch('/my-monsters');
-    if (!res.ok) return;
-    const data = await res.json();
-    allMonsters = data.monsters || [];
-
-    // --- Coalition & Crystal Info ---
-    const coalitionName = data.coalitionName || "Unknown";
-    const coalitionColor = data.coalitionColor || "#802200"; // default fallback
-    const crystals = data.crystals ?? 0;
-
-    // Update username display with coalition
-    document.getElementById('username-display').textContent =
-      `Logged in as: ${data.name} (${coalitionName})`;
-
-    // Update crystal count
-    document.getElementById('crystal-amount').textContent = crystals;
-
-    // Apply coalition color theme to main buttons
-    const themedButtons = [
-      'check-inbox-btn', 'claim-code-btn',
-      'sort-order-btn', 'leaderboard-refresh-btn'
-    ];
-    themedButtons.forEach(id => {
-      const btn = document.getElementById(id);
-      if (btn) {
-        btn.style.backgroundColor = coalitionColor;
-        btn.style.borderColor = coalitionColor;
-      }
-    });
-
-    /* ✨ ADDED: apply coalition color globally (tints background, aura, accents) */
-    (function applyCoalitionTheme(hex) {
-      // convert hex like "#aabbcc" to "r,g,b"
-      function hexToRgb(h) {
-        if (!h) return null;
-        let hex = h.replace('#','').trim();
-        if (hex.length === 3) hex = hex.split('').map(ch => ch+ch).join('');
-        const int = parseInt(hex, 16);
-        const r = (int >> 16) & 255;
-        const g = (int >> 8) & 255;
-        const b = int & 255;
-        return `${r},${g},${b}`;
-      }
-      const rgb = hexToRgb(hex) || '128,80,36';
-      // set main accent vars
-      document.documentElement.style.setProperty('--accent', hex);
-      document.documentElement.style.setProperty('--accent-2', hex);
-      // coalition tint variables used by CSS (with alpha)
-      document.documentElement.style.setProperty('--coalition-rgb', rgb);
-      document.documentElement.style.setProperty('--coalition-10', `rgba(${rgb},0.10)`);
-      document.documentElement.style.setProperty('--coalition-06', `rgba(${rgb},0.06)`);
-      document.documentElement.style.setProperty('--coalition-03', `rgba(${rgb},0.03)`);
-      document.documentElement.style.setProperty('--coalition-18', `rgba(${rgb},0.18)`);
-      // shadow glow using coalition color
-      document.documentElement.style.setProperty('--shadow-glow', `0 0 30px rgba(${rgb},0.22), inset 0 0 40px rgba(${rgb},0.08)`);
-      // optional: also tint page aura seed slightly stronger
-      document.documentElement.style.setProperty('--page-aura-strong', `rgba(${rgb},0.12)`);
-    })(coalitionColor);
-
-    renderMonsters(allMonsters);
-  } catch (err) {
-    console.error('Failed to fetch mons:', err);
-  }
-}
-
-
-async function fetchLeaderboard() {
-  try {
-    const res = await fetch('/leaderboard');
-    if (!res.ok) throw new Error('Failed to fetch leaderboard');
-    const data = await res.json();
-    const listEl = document.getElementById('leaderboard-list');
-    listEl.innerHTML = '';
-    data.leaderboard.forEach(player => {
-      const li = document.createElement('li');
-      li.textContent = `${player.name} (${player.monsterCount} mons)`;
+/* -------------------------
+   LEADERBOARD
+------------------------- */
+async function fetchLeaderboard(){
+  try{
+    const res=await fetch('/leaderboard');
+    if(!res.ok) throw new Error();
+    const data=await res.json();
+    const listEl=document.getElementById('leaderboard-list');
+    listEl.innerHTML='';
+    data.leaderboard.forEach(p=>{
+      const li=document.createElement('li');
+      li.textContent=`${p.name} (${p.monsterCount} mons)`;
       listEl.appendChild(li);
     });
-  } catch (err) {
-    console.error(err);
-    alert('Error loading leaderboard');
-  }
+  }catch(err){ console.error(err); }
 }
 
-
-
-// --- Inbox ---
-const inboxModal = document.getElementById('inbox-modal');
-const inboxReason = document.getElementById('inbox-reason');
-const inboxImg = document.getElementById('inbox-img');
-const inboxName = document.getElementById('inbox-name');
-const inboxRarity = document.getElementById('inbox-rarity');
-const claimBtn = document.getElementById('claim-btn');
-
-let inboxQueue = [], currentInboxIndex = 0;
-
-async function checkInbox() {
-  try {
-    const res = await fetch('/my-inbox');
-    if (!res.ok) throw new Error('Failed to fetch inbox');
-    const data = await res.json();
-    
-    if (!data.inbox.length) {
-      alert('Inbox is empty :c'); 
-      document.getElementById('inbox-count').textContent = '';
-      return; 
-    }
-
-    inboxQueue = data.inbox;
-    currentInboxIndex = 0;
-    document.getElementById('inbox-count').textContent = `Inbox: ${data.count} monsters`;
-    showInbox(currentInboxIndex);
-  } catch (err) {
-    console.error(err);
-    alert(err.message);
-  }
+/* -------------------------
+   GIFT MONSTER
+------------------------- */
+async function giftMonster(monster){
+  const toUsername=prompt('Enter receiver username:');
+  if(!toUsername) return;
+  try{
+    const userRes=await fetch(`/find-user/${toUsername}`);
+    const userData=await userRes.json();
+    if(!userData.exists){ alert('User not found'); return; }
+    const res=await fetch('/gift',{method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({toPlayerId:userData.playerId, offeredMonsters:[monster]})});
+    const result=await res.json();
+    if(res.ok){ alert('Monster sent to inbox!'); closeMonsterModal(); fetchMonsters(); }
+    else{ alert('Failed to gift: '+(result.error||'Unknown')); }
+  }catch(err){ console.error(err); alert('Gift failed: '+err.message); }
 }
 
-document.getElementById('check-inbox-btn').addEventListener('click', checkInbox);
+/* -------------------------
+   INBOX MODAL
+------------------------- */
+const inboxModalEl=document.getElementById('inbox-modal');
+const inboxEls={reason:document.getElementById('inbox-reason'), img:document.getElementById('inbox-img'), name:document.getElementById('inbox-name'), rarity:document.getElementById('inbox-rarity'), claimBtn:document.getElementById('claim-btn'), count:document.getElementById('inbox-count')};
 
-
-document.getElementById('claim-all-btn').addEventListener('click', async () => {
-  try {
-    const res = await fetch('/claim-all', { method: 'POST' });
-    const data = await res.json();
-    if (res.ok) {
-      alert(data.message);
-
-      // Clear inbox and hide modal
-      inboxQueue = [];
-      currentInboxIndex = 0;
-      inboxModal.classList.remove('show');
-
-      // Update inbox count
-      updateInboxCount();
-
-      // Refresh monsters
-      fetchMonsters();
-    } else {
-      alert(data.error || 'Failed to claim all');
-    }
-  } catch (err) {
-    console.error(err);
-    alert('Error claiming all monsters');
-  }
-});
-
-
-function updateInboxCount() {
-  const count = inboxQueue.length - currentInboxIndex;
-  document.getElementById('inbox-count').textContent = `Inbox: ${count} monster${count !== 1 ? 's' : ''}`;
-}
-
-function showInbox(index) {
-  if (index >= inboxQueue.length) {
-    inboxModal.classList.remove('show');
-    inboxQueue = [];
-    currentInboxIndex = 0;
+async function checkInbox(){
+  try{
+    const res=await fetch('/my-inbox');
+    const data=await res.json();
+    if(!data.inbox.length){ alert('Inbox empty'); inboxEls.count.textContent=''; return; }
+    state.inboxQueue=data.inbox; state.inboxIndex=0;
     updateInboxCount();
-    fetchMonsters();
-    return;
-  }
-  const mon = inboxQueue[index];
-  inboxReason.textContent = `Reason: ${mon.reason.charAt(0).toUpperCase() + mon.reason.slice(1)}`;
-  inboxName.textContent = mon.name;
-  inboxRarity.textContent = mon.rarity.toUpperCase();
-  inboxRarity.style.color = getRarityColor(mon.rarity);
-  inboxImg.src = mon.image || '/monsters/placeholder.png';
-  inboxModal.classList.add('show');
-
-  updateInboxCount(); // Update count every time a monster is shown
-
-  claimBtn.onclick = async () => {
-    await claimMonster(mon.instanceId);
-  };
+    showInbox(state.inboxIndex);
+  }catch(err){ console.error(err); alert(err.message); }
 }
-
-async function claimMonster(instanceId) {
-  try {
-    const res = await fetch(`/claim/${instanceId}`, { method: 'POST' });
-    if (!res.ok) throw new Error('Claim failed');
-
-    currentInboxIndex++;
-    showInbox(currentInboxIndex); // will also update count
-  } catch (err) {
-    console.error(err);
-    alert(err.message);
-  }
+function updateInboxCount(){ const cnt=state.inboxQueue.length-state.inboxIndex; inboxEls.count.textContent=`Inbox: ${cnt} monster${cnt!==1?'s':''}`; }
+function showInbox(i){
+  if(i>=state.inboxQueue.length){ inboxModalEl.classList.remove('show'); state.inboxQueue=[]; state.inboxIndex=0; updateInboxCount(); fetchMonsters(); return; }
+  const mon=state.inboxQueue[i];
+  inboxEls.reason.textContent=`Reason: ${mon.reason.charAt(0).toUpperCase()+mon.reason.slice(1)}`;
+  inboxEls.name.textContent=mon.name;
+  inboxEls.rarity.textContent=mon.rarity.toUpperCase();
+  inboxEls.rarity.style.color=getRarityColor(mon.rarity);
+  inboxEls.img.src=mon.image||'/monsters/placeholder.png';
+  inboxModalEl.classList.add('show');
+  updateInboxCount();
+  inboxEls.claimBtn.onclick=()=>claimMonster(mon.instanceId);
 }
+async function claimMonster(id){ try{ const res=await fetch(`/claim/${id}`,{method:'POST'}); if(!res.ok) throw new Error('Claim failed'); state.inboxIndex++; showInbox(state.inboxIndex);}catch(err){alert(err.message);} }
+document.getElementById('check-inbox-btn').addEventListener('click',checkInbox);
+document.getElementById('claim-all-btn').addEventListener('click',async ()=>{
+  try{
+    const res=await fetch('/claim-all',{method:'POST'}); const data=await res.json();
+    if(res.ok){ alert(data.message); state.inboxQueue=[]; state.inboxIndex=0; inboxModalEl.classList.remove('show'); updateInboxCount(); fetchMonsters();}
+    else{ alert(data.error||'Failed to claim all'); }
+  }catch(err){alert('Error claiming all');}
+});
+inboxModalEl.querySelector('.close-btn').addEventListener('click',()=>inboxModalEl.classList.remove('show'));
+inboxModalEl.addEventListener('click',e=>{if(e.target===inboxModalEl) inboxModalEl.classList.remove('show');});
 
+/* -------------------------
+   SORT CONTROLS
+------------------------- */
+const sortSelect=document.getElementById('sort-select');
+const sortOrderBtn=document.getElementById('sort-order-btn');
+sortSelect.addEventListener('change',()=>{ state.currentSort.key=sortSelect.value; renderMonsters(state.monsters); });
+sortOrderBtn.addEventListener('click',()=>{ state.currentSort.ascending=!state.currentSort.ascending; sortOrderBtn.textContent=state.currentSort.ascending?'⬆️':'⬇️'; renderMonsters(state.monsters); });
 
-// --- Sort Controls ---
-const sortSelect = document.getElementById('sort-select');
-const sortOrderBtn = document.getElementById('sort-order-btn');
-
-sortSelect.addEventListener('change', () => {
-  currentSort.key = sortSelect.value;
-  renderMonsters(allMonsters);
+/* -------------------------
+   CLAIM CODE
+------------------------- */
+document.getElementById('claim-code-btn').addEventListener('click',async ()=>{
+  const code=document.getElementById('claim-code-input').value.trim();
+  if(!code) return alert('Enter a code!');
+  try{
+    const res=await fetch('/claim-code',{method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({code})});
+    const data=await res.json();
+    if(res.ok){ alert(`You received ${data.monster.name}! Check inbox!`); document.getElementById('claim-code-input').value='';}
+    else alert(data.error||'Invalid code');
+  }catch(err){alert('Error redeeming code');}
 });
 
-sortOrderBtn.addEventListener('click', () => {
-  currentSort.ascending = !currentSort.ascending;
-  sortOrderBtn.textContent = currentSort.ascending ? '⬆️' : '⬇️';
-  renderMonsters(allMonsters);
-});
+/* -------------------------
+   LEADERBOARD REFRESH
+------------------------- */
+document.getElementById('leaderboard-refresh-btn').addEventListener('click',fetchLeaderboard);
 
-//code handler
+/* -------------------------
+   LOGIN / INIT
+------------------------- */
+document.getElementById('login-btn').addEventListener('click',()=>window.location.href='/login');
 
-document.getElementById('claim-code-btn').addEventListener('click', async () => {
-  const code = document.getElementById('claim-code-input').value.trim();
-  if (!code) return alert('Enter a code!');
-  try {
-    const res = await fetch('/claim-code', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ code })
-    });
-    const data = await res.json();
-    if (res.ok) {
-      alert(`You received ${data.monster.name}! Check your inbox!`);
-      document.getElementById('claim-code-input').value = '';
-    } else {
-      alert(data.error || 'Invalid code');
-    }
-  } catch (err) {
-    console.error(err);
-    alert('Error redeeming code');
-  }
-});
-//refresh leaderboard
-document.getElementById('leaderboard-refresh-btn').addEventListener('click', () => {
-  fetchLeaderboard();
-});
-
-// --- Login / Init ---
-// --- Login / Init ---
-document.getElementById('login-btn').addEventListener('click', () => window.location.href = '/login');
-
-(async function init() {
-  try {
-    const res = await fetch('/my-monsters');
-    if (res.ok) {
-      document.getElementById('login-btn').style.display = 'none';
-      document.getElementById('top-bar').style.display = 'flex';
+(async function init(){
+  try{
+    const res=await fetch('/my-monsters');
+    if(res.ok){
+      document.getElementById('login-btn').style.display='none';
+      document.getElementById('top-bar').style.display='flex';
       await fetchMonsters();
-
-      // ✅ Automatically refresh logtime upon page load
-      console.log('Refreshing logtime...');
-      try {
-        const logRes = await fetch('/refresh-logtime');
-        if (logRes.ok) {
-          const logData = await logRes.json();
-          console.log('Logtime refreshed:', logData);
-          // You can optionally reward the player or display a popup here
-          if (logData.rewardGranted) {
-            alert(`You earned a reward for logging ${logData.hours} hours today!`);
-            await checkInbox(); // auto-check inbox if they got something
-          }
-        } else {
-          console.warn('Failed to refresh logtime');
-        }
-      } catch (err) {
-        console.error('Error refreshing logtime:', err);
-      }
-
-      // Fetch leaderboard as well
       await fetchLeaderboard();
+      try{
+        const logRes=await fetch('/refresh-logtime'); 
+        if(logRes.ok){ const logData=await logRes.json(); if(logData.rewardGranted){ alert(`You earned a reward for logging ${logData.hours} hours today!`); await checkInbox();}}
+      }catch(err){console.error(err);}
     }
-  } catch (err) { 
-    console.log('Not logged in'); 
-  }
+  }catch(err){ console.log('Not logged in'); }
 })();
-
 </script>
 </body>
 </html>
