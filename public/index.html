@@ -4,189 +4,574 @@
 <meta charset="UTF-8">
 <title>Intramon</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323:wght@400&display=swap" rel="stylesheet">
 <style>
-  /* =========================
-     BASE LAYOUT & VARIABLES
-     ========================= */
-  :root {
-    --bg:#050007;
-    --panel: rgba(255,255,255,0.03);
-    --soft: rgba(255,255,255,0.04);
-    --glass: rgba(255,255,255,0.02);
-    --accent: #8b5cf6;
-    --accent-2: #6d28d9;
-    --muted: #b9b9c6;
-    --card-radius: 16px;
-    --shadow-glow: 0 0 30px rgba(139,92,246,0.18), inset 0 0 40px rgba(139,92,246,0.035);
-    --glass-border: 1px solid rgba(255,255,255,0.04);
-    --coalition-rgb: 139,92,246;
-    --coalition-10: rgba(139,92,246,0.10);
-    --coalition-06: rgba(139,92,246,0.06);
-    --coalition-03: rgba(139,92,246,0.03);
-    --coalition-18: rgba(139,92,246,0.18);
-  }
+/* =========================
+   RETRO BASE — DMG/CGA VIBES
+   ========================= */
+:root {
+  --bg:        #0a0a0a;
+  --bg2:       #111111;
+  --screen-green: #39ff14;
+  --screen-dim:   #1a7a0a;
+  --amber:     #ffb300;
+  --amber-dim: #7a5500;
+  --cyan:      #00e5ff;
+  --magenta:   #ff00aa;
+  --red:       #ff2020;
+  --panel-bg:  #111111;
+  --panel-border: #333333;
+  --text:      #d4d4d4;
+  --text-dim:  #777777;
+  --pixel:     'Press Start 2P', monospace;
+  --crt:       'VT323', monospace;
 
-  html,body{height:100%;margin:0;padding:28px;font-family:Inter, 'Segoe UI', system-ui, -apple-system, 'Helvetica Neue', Arial;color:#e6e6ee;scroll-behavior:smooth;background:
-        radial-gradient(600px 400px at 10% 10%, var(--coalition-06), transparent 8%),
-        radial-gradient(400px 300px at 90% 90%, var(--coalition-03), transparent 8%),
-        var(--bg);
-      -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;}
-
-  .page-aura{
-    pointer-events:none; position:fixed; inset:0; z-index:0; mix-blend-mode:screen;
-    background:
-      radial-gradient(circle at 10% 10%, var(--coalition-10), transparent 10%),
-      radial-gradient(circle at 90% 80%, var(--coalition-06), transparent 10%);
-    filter: blur(24px) saturate(1.2);
-  }
-
-  h1{font-weight:700;margin:0 0 6px;letter-spacing:-0.02em;color:#efeaff;font-size:20px}
-
-  /* TOP BAR */
-  #top-bar{
-    display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px 16px;
-    border-radius:12px;background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
-    border: var(--glass-border); box-shadow: var(--shadow-glow); max-width:1100px; margin:0 auto 22px; position:relative; z-index:5;
-    backdrop-filter: blur(8px) saturate(1.2); transform: translateZ(0);
-  }
-  #top-bar.hidden{display:none}
-  #username-display{font-weight:700;color:#f3ecff}
-
-  /* layout */
-  #main-container{display:flex; gap:22px; max-width:1200px; margin:0 auto; align-items:flex-start; z-index:4;}
-
-  /* Leaderboard */
-  #leaderboard{width:230px;padding:16px;border-radius:12px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border:var(--glass-border);box-shadow:0 8px 30px rgba(11,2,22,0.7);}
-  #leaderboard h3{margin:0 0 10px;color:#efeaff}
-  #leaderboard-list{color:var(--muted);padding-left:18px;margin:0;}
-  #leaderboard li{margin:8px 0;font-size:14px}
-
-  /* Monster Grid */
-  #monster-grid{display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:20px; width:100%; padding:12px; align-self:stretch;}
-  .monster-card{
-    position:relative; overflow:visible; cursor:pointer; padding:18px 14px; border-radius:var(--card-radius);
-    background: linear-gradient(180deg, rgba(255,255,255,0.018), rgba(255,255,255,0.01));
-    border:2px solid; border-image-slice:1;
-    box-shadow: 0 6px 26px rgba(2,2,6,0.8); transition: transform .28s cubic-bezier(.2,.9,.2,1), box-shadow .28s, filter .28s;
-    display:flex; flex-direction:column; align-items:center; gap:8px; text-align:center; transform-origin:center; will-change:transform;
-  }
-  .monster-card[data-loaded="true"]{animation: floatIn .6s cubic-bezier(.2,.9,.2,1) both}
-  @keyframes floatIn{from{opacity:0; transform: translateY(18px) scale(.98)} to{opacity:1; transform:translateY(0) scale(1)}}
-  .monster-card:hover{
-    transform: translateY(-8px) scale(1.04) perspective(600px) rotateX(2deg) translateZ(4px);
-    filter: saturate(1.05) drop-shadow(0 8px 40px rgba(107,33,168,0.08));
-  }
-  .monster-card img{width:96px;height:96px;object-fit:contain;transition: transform .5s;}
-  .monster-card:hover img{transform: translateY(-6px) rotate(-3deg) scale(1.02)}
-  .monster-card[data-rarity="common"] img { filter: drop-shadow(0 0 6px #4CAF50); }
-  .monster-card[data-rarity="rare"] img { filter: drop-shadow(0 0 6px #2196F3); }
-  .monster-card[data-rarity="epic"] img { filter: drop-shadow(0 0 6px #9C27B0); }
-  .monster-card[data-rarity="legendary"] img { filter: drop-shadow(0 0 6px #FF9800); }
-  .monster-card h3{margin:0;font-size:16px;letter-spacing:-0.02em}
-  .monster-card small{color:var(--muted);font-weight:600}
-
-  /* Buttons */
-  button{appearance:none;border:none;padding:8px 12px;border-radius:10px;font-weight:700;cursor:pointer;transition: transform .14s ease, opacity .12s ease;}
-  button:active{transform:scale(.98)}
-  .btn-primary{background:linear-gradient(180deg,var(--accent), var(--accent-2)); color:white; box-shadow:0 6px 22px rgba(107,33,168,0.18)}
-
-  /* Inputs */
-  input{background:transparent;border:1px solid rgba(255,255,255,0.05);padding:8px 10px;border-radius:10px;color:#efeaff;outline:none}
-  input::placeholder{color:#9b94a8}
-
-  /* Modals */
-  .modal{display:none;position:fixed;inset:0;background:linear-gradient(180deg, rgba(0,0,0,0.55), rgba(0,0,0,0.6));justify-content:center;align-items:center;padding:20px;z-index:999}
-  .modal.show{display:flex}
-  .modal-content{width:min(420px,95%);border-radius:18px;padding:22px;position:relative;background:linear-gradient(180deg, rgba(16,7,28,0.9), rgba(18,9,34,0.95));border:1px solid rgba(139,92,246,0.08);box-shadow:0 40px 120px rgba(7,3,18,0.9)}
-  .modal-content img{width:160px;height:160px;object-fit:contain;margin:0 auto 12px;display:block}
-  .close-btn{position:absolute;right:14px;top:10px;font-size:20px;cursor:pointer;color:#cfc9ff}
-  .stats p{margin:6px 0;color:#e9e6ff}
-  #inbox-count{display:block;margin-top:10px;color:#c9c2e6}
-  #crystal-counter{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));padding:6px 10px;border-radius:10px;display:flex;align-items:center;gap:8px}
-
-  /* Mobile */
-  @media (max-width:840px){
-    #main-container{flex-direction:column;}
-    #leaderboard{width:100%; order:2}
-    #monster-grid{order:1}
-  }
-
-  /* Scrollbar */
-  ::-webkit-scrollbar{height:10px;width:10px}
-  ::-webkit-scrollbar-thumb{background: linear-gradient(180deg, rgba(139,92,246,0.18), rgba(99,102,241,0.18)); border-radius:999px}
-  ::-webkit-scrollbar-track{background:transparent}
-
-/* Shimmer & Pulse Effects */
-.pulse {
-  animation: pulseGlow 3.6s ease-in-out infinite;
+  --rarity-common:    #39ff14;
+  --rarity-rare:      #00e5ff;
+  --rarity-epic:      #ff00aa;
+  --rarity-legendary: #ffb300;
 }
 
-@keyframes pulseGlow {
-  0% { box-shadow: 0 6px 26px rgba(99,66,255,0.08); }
-  50% { box-shadow: 0 18px 60px rgba(99,66,255,0.14); }
-  100% { box-shadow: 0 6px 26px rgba(99,66,255,0.08); }
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body {
+  margin: 0; padding: 0; min-height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--crt);
+  font-size: 18px;
+  line-height: 1.5;
+  -webkit-font-smoothing: none;
+  image-rendering: pixelated;
+  overflow-x: hidden;
 }
 
-.shimmer {
-  position: relative;
-  overflow: hidden;
-}
-
-.shimmer::after {
+/* ── SCANLINES overlay ── */
+body::before {
   content: '';
-  position: absolute;
-  top: 0;
-  left: -150%;
-  width: 150%;
-  height: 100%;
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    var(--shimmer-color, rgba(255,255,255,0.05)) 50%,
-    transparent 100%
-  );
-  transform: skewX(-20deg);
-  animation: shimmer 1.6s linear infinite;
   pointer-events: none;
+  position: fixed; inset: 0; z-index: 9999;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0px,
+    transparent 2px,
+    rgba(0,0,0,0.18) 2px,
+    rgba(0,0,0,0.18) 4px
+  );
 }
 
-@keyframes shimmer {
-  0% { left: -150%; }
-  100% { left: 150%; }
+/* ── CRT screen vignette ── */
+body::after {
+  content: '';
+  pointer-events: none;
+  position: fixed; inset: 0; z-index: 9998;
+  background: radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,0.72) 100%);
 }
 
+/* ── Noise dither ── */
+.noise {
+  position: fixed; inset: 0; z-index: 9997; pointer-events: none; opacity: 0.025;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  background-size: 128px 128px;
+}
+
+/* ── Blinking cursor ── */
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+.blink { animation: blink 1s step-end infinite; }
+
+/* ── Pixel border mixin ── */
+.pixel-box {
+  border: 2px solid var(--panel-border);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.04);
+  background: var(--panel-bg);
+  image-rendering: pixelated;
+}
+
+/* ── Retro button ── */
+button {
+  appearance: none; border: none;
+  font-family: var(--pixel);
+  font-size: 7px;
+  padding: 10px 14px;
+  border-radius: 0;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  transition: filter .08s, transform .06s;
+  position: relative;
+}
+button:active { transform: translateY(2px); filter: brightness(0.8); }
+
+.btn-primary {
+  background: var(--screen-green);
+  color: #000;
+  border: 2px solid var(--screen-dim);
+  box-shadow: 3px 3px 0 var(--screen-dim);
+}
+.btn-primary:hover { filter: brightness(1.15); }
+.btn-primary:active { box-shadow: 1px 1px 0 var(--screen-dim); }
+
+/* ── Inputs ── */
+input, select {
+  background: #000;
+  color: var(--screen-green);
+  border: 2px solid #333;
+  padding: 8px 10px;
+  font-family: var(--crt);
+  font-size: 18px;
+  outline: none;
+  border-radius: 0;
+  -webkit-font-smoothing: none;
+}
+input::placeholder { color: var(--screen-dim); }
+input:focus, select:focus { border-color: var(--screen-green); }
+select option { background: #000; color: var(--screen-green); }
+
+/* =========================
+   TOP BAR
+   ========================= */
+#top-bar {
+  max-width: 1160px;
+  margin: 18px auto 0;
+  padding: 10px 14px;
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  flex-wrap: wrap;
+  border: 2px solid var(--panel-border);
+  border-top: 3px solid var(--screen-green);
+  background: var(--panel-bg);
+  position: relative; z-index: 10;
+}
+#top-bar.hidden { display: none; }
+
+#title-block h1 {
+  font-family: var(--pixel);
+  font-size: 13px;
+  color: var(--screen-green);
+  margin: 0 0 4px;
+  text-shadow: 0 0 12px rgba(57,255,20,0.5);
+  letter-spacing: 0.05em;
+}
+#username-display {
+  font-family: var(--crt);
+  font-size: 17px;
+  color: var(--text-dim);
+}
+
+#crystal-counter {
+  background: #000;
+  border: 2px solid var(--amber-dim);
+  padding: 6px 12px;
+  font-family: var(--pixel);
+  font-size: 8px;
+  color: var(--amber);
+  text-shadow: 0 0 8px rgba(255,179,0,0.6);
+  display: flex; align-items: center; gap: 8px;
+}
+#crystal-amount { color: var(--amber); }
+
+/* =========================
+   LAYOUT
+   ========================= */
+#main-container {
+  display: flex; gap: 18px; max-width: 1160px;
+  margin: 16px auto 32px;
+  padding: 0 12px;
+  align-items: flex-start;
+  position: relative; z-index: 4;
+}
+
+/* =========================
+   LEADERBOARD
+   ========================= */
+#leaderboard {
+  width: 220px; flex-shrink: 0;
+  border: 2px solid var(--panel-border);
+  border-top: 3px solid var(--amber);
+  background: var(--panel-bg);
+  padding: 14px;
+}
+#leaderboard h3 {
+  font-family: var(--pixel);
+  font-size: 8px;
+  color: var(--amber);
+  margin: 0 0 12px;
+  text-shadow: 0 0 8px rgba(255,179,0,0.4);
+  text-transform: uppercase;
+}
+#leaderboard-list {
+  list-style: none;
+  padding: 0; margin: 0;
+  font-family: var(--crt);
+  font-size: 17px;
+}
+#leaderboard-list li {
+  padding: 5px 0;
+  border-bottom: 1px solid #1e1e1e;
+  color: var(--text);
+}
+#leaderboard-list li:first-child { color: var(--amber); }
+#leaderboard-list li:nth-child(2) { color: var(--text); }
+#leaderboard-list li:nth-child(3) { color: var(--rarity-common); }
+
+/* =========================
+   MONSTER GRID
+   ========================= */
+#monster-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 14px;
+  flex: 1;
+}
+
+/* ── TCG-style monster card ── */
+.monster-card {
+  position: relative;
+  cursor: pointer;
+  background: #0d0d0d;
+  border: 2px solid;
+  display: flex; flex-direction: column;
+  overflow: hidden;
+  transition: transform .12s steps(2), filter .12s;
+  image-rendering: pixelated;
+}
+.monster-card:hover {
+  transform: translateY(-4px) scale(1.03);
+  filter: brightness(1.1);
+}
+
+/* rarity color borders */
+.monster-card[data-rarity="common"]    { border-color: var(--rarity-common); }
+.monster-card[data-rarity="rare"]      { border-color: var(--rarity-rare); }
+.monster-card[data-rarity="epic"]      { border-color: var(--rarity-epic); }
+.monster-card[data-rarity="legendary"] { border-color: var(--rarity-legendary); }
+
+/* card header strip */
+.card-header {
+  padding: 4px 6px;
+  font-family: var(--pixel);
+  font-size: 6px;
+  display: flex; justify-content: space-between; align-items: center;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.monster-card[data-rarity="common"]    .card-header { background: #0b1f0b; color: var(--rarity-common); }
+.monster-card[data-rarity="rare"]      .card-header { background: #0a1a22; color: var(--rarity-rare); }
+.monster-card[data-rarity="epic"]      .card-header { background: #1a0015; color: var(--rarity-epic); }
+.monster-card[data-rarity="legendary"] .card-header { background: #1e1500; color: var(--rarity-legendary); }
+
+/* image area — dithered style bg */
+.card-img-wrap {
+  background: repeating-linear-gradient(
+    45deg,
+    #111 0px, #111 2px,
+    #0d0d0d 2px, #0d0d0d 4px
+  );
+  display: flex; align-items: center; justify-content: center;
+  padding: 10px;
+  min-height: 110px;
+  position: relative;
+}
+.card-img-wrap img {
+  width: 80px; height: 80px;
+  object-fit: contain;
+  image-rendering: pixelated;
+  transition: transform .2s steps(3);
+}
+.monster-card:hover .card-img-wrap img {
+  transform: translateY(-4px);
+}
+
+/* rarity glow on image */
+.monster-card[data-rarity="common"]    .card-img-wrap img { filter: drop-shadow(0 0 5px var(--rarity-common)); }
+.monster-card[data-rarity="rare"]      .card-img-wrap img { filter: drop-shadow(0 0 5px var(--rarity-rare)); }
+.monster-card[data-rarity="epic"]      .card-img-wrap img { filter: drop-shadow(0 0 5px var(--rarity-epic)); }
+.monster-card[data-rarity="legendary"] .card-img-wrap img { filter: drop-shadow(0 0 8px var(--rarity-legendary)) drop-shadow(0 0 16px var(--rarity-legendary)); }
+
+/* card footer */
+.card-footer {
+  padding: 6px 8px;
+  background: #0a0a0a;
+  border-top: 1px solid #1e1e1e;
+}
+.card-name {
+  font-family: var(--pixel);
+  font-size: 6.5px;
+  color: var(--text);
+  margin: 0 0 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+}
+.card-element {
+  font-family: var(--crt);
+  font-size: 15px;
+  color: var(--text-dim);
+}
+
+/* legendary shimmer */
+.monster-card[data-rarity="legendary"]::before {
+  content: '';
+  position: absolute; inset: 0; z-index: 2; pointer-events: none;
+  background: linear-gradient(
+    115deg,
+    transparent 30%,
+    rgba(255,179,0,0.07) 50%,
+    transparent 70%
+  );
+  background-size: 200% 200%;
+  animation: holographic 3s linear infinite;
+}
+@keyframes holographic {
+  0%   { background-position: 200% 0%; }
+  100% { background-position: -200% 0%; }
+}
+
+/* entrance animation */
+@keyframes pixelIn {
+  from { opacity:0; transform: translateY(12px) scale(.95); clip-path: inset(100% 0 0 0); }
+  to   { opacity:1; transform: translateY(0)   scale(1);    clip-path: inset(0% 0 0 0); }
+}
+.monster-card[data-loaded="true"] {
+  animation: pixelIn .3s steps(6) both;
+}
+
+/* =========================
+   MODALS
+   ========================= */
+.modal {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.85);
+  justify-content: center; align-items: center;
+  padding: 20px; z-index: 1000;
+}
+.modal.show { display: flex; }
+
+.modal-content {
+  width: min(400px,96%);
+  background: #0a0a0a;
+  border: 2px solid #333;
+  border-top: 3px solid var(--screen-green);
+  padding: 0;
+  position: relative;
+  font-family: var(--crt);
+}
+
+/* modal title bar */
+.modal-titlebar {
+  background: #111;
+  border-bottom: 2px solid #222;
+  padding: 8px 14px;
+  display: flex; align-items: center; justify-content: space-between;
+  font-family: var(--pixel);
+  font-size: 8px;
+  color: var(--screen-green);
+  text-shadow: 0 0 8px rgba(57,255,20,0.4);
+}
+.modal-titlebar .close-btn {
+  background: var(--red);
+  color: #000;
+  border: 2px solid #900;
+  box-shadow: 2px 2px 0 #500;
+  font-family: var(--pixel);
+  font-size: 7px;
+  padding: 4px 8px;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.modal-body {
+  padding: 18px;
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  text-align: center;
+}
+
+.modal-body img {
+  width: 140px; height: 140px;
+  object-fit: contain;
+  image-rendering: pixelated;
+  background: repeating-linear-gradient(
+    45deg, #111 0px, #111 2px, #0d0d0d 2px, #0d0d0d 4px
+  );
+  padding: 10px;
+  border: 2px solid #1e1e1e;
+}
+
+#modal-name, #inbox-name {
+  font-family: var(--pixel);
+  font-size: 10px;
+  color: var(--text);
+  text-transform: uppercase;
+  margin: 4px 0 0;
+}
+
+#modal-rarity, #inbox-rarity {
+  font-family: var(--crt);
+  font-size: 20px;
+  letter-spacing: 0.08em;
+}
+
+/* stat table */
+.stat-grid {
+  width: 100%;
+  border: 1px solid #1e1e1e;
+  font-family: var(--crt);
+  font-size: 18px;
+  margin-top: 6px;
+}
+.stat-row {
+  display: flex; justify-content: space-between;
+  padding: 4px 10px;
+  border-bottom: 1px solid #1a1a1a;
+}
+.stat-row:last-child { border-bottom: none; }
+.stat-label { color: var(--text-dim); }
+.stat-val   { color: var(--screen-green); font-weight: bold; }
+
+.modal-actions {
+  display: flex; gap: 10px; justify-content: center;
+  padding: 12px 18px;
+  border-top: 1px solid #1e1e1e;
+}
+
+#inbox-count {
+  font-family: var(--crt);
+  font-size: 17px;
+  color: var(--text-dim);
+  margin-top: 4px;
+}
+#inbox-reason {
+  font-family: var(--pixel);
+  font-size: 7px;
+  color: var(--amber);
+  text-shadow: 0 0 6px rgba(255,179,0,0.4);
+  text-transform: uppercase;
+  margin: 0;
+}
+
+/* =========================
+   LOGIN / BOOT SCREEN
+   ========================= */
+#login-screen {
+  position: fixed; inset: 0; z-index: 5000;
+  background: #000;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 32px;
+}
+#login-screen h1 {
+  font-family: var(--pixel);
+  font-size: clamp(18px,4vw,32px);
+  color: var(--screen-green);
+  text-shadow: 0 0 20px rgba(57,255,20,0.7), 0 0 60px rgba(57,255,20,0.3);
+  text-align: center;
+  letter-spacing: 0.08em;
+  animation: glow 2s ease-in-out infinite alternate;
+}
+@keyframes glow {
+  from { text-shadow: 0 0 10px rgba(57,255,20,0.5); }
+  to   { text-shadow: 0 0 30px rgba(57,255,20,0.9), 0 0 60px rgba(57,255,20,0.4); }
+}
+
+.boot-line {
+  font-family: var(--crt);
+  font-size: 20px;
+  color: var(--text-dim);
+  text-align: center;
+}
+
+#login-btn {
+  font-size: 9px;
+  padding: 14px 24px;
+  background: #000;
+  color: var(--screen-green);
+  border: 2px solid var(--screen-green);
+  box-shadow: 0 0 16px rgba(57,255,20,0.3), inset 0 0 16px rgba(57,255,20,0.05);
+  animation: blink 1.2s step-end infinite;
+}
+#login-btn:hover {
+  background: var(--screen-green);
+  color: #000;
+  animation: none;
+  box-shadow: 0 0 24px rgba(57,255,20,0.5);
+}
+
+/* =========================
+   SORT CONTROLS
+   ========================= */
+#sort-controls {
+  display: flex; align-items: center; gap: 6px;
+}
+#sort-controls label {
+  font-family: var(--pixel);
+  font-size: 7px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+}
+
+/* =========================
+   RETRO SCROLLBAR
+   ========================= */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-thumb { background: #333; border: 1px solid #555; }
+::-webkit-scrollbar-track { background: #0a0a0a; }
+
+/* =========================
+   MOBILE
+   ========================= */
+@media (max-width: 760px) {
+  #main-container { flex-direction: column; padding: 0 8px; }
+  #leaderboard { width: 100%; order: 2; }
+  #monster-grid { order: 1; }
+  #top-bar { flex-direction: column; align-items: flex-start; gap: 8px; }
+}
+
+/* ── Top-bar inner groups ── */
+.topbar-left  { display:flex; flex-direction:column; }
+.topbar-right { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
 </style>
 </head>
 <body>
-<div class="page-aura" aria-hidden="true"></div>
 
+<div class="noise" aria-hidden="true"></div>
+
+<!-- BOOT / LOGIN SCREEN (shown when not logged in) -->
+<div id="login-screen">
+  <h1>INTRAMON</h1>
+  <div class="boot-line">VERSION 1.0 — 64K RAM SYSTEM<br>READY<span class="blink">_</span></div>
+  <button id="login-btn">▶ LOGIN VIA 42</button>
+  <div class="boot-line" style="font-size:15px; margin-top:16px;">INSERT COIN TO CONTINUE</div>
+</div>
+
+<!-- TOP BAR (shown when logged in) -->
 <header id="top-bar" class="hidden">
-  <div style="display:flex; align-items:center; gap:12px;">
-    <div style="display:flex; flex-direction:column; align-items:flex-start;">
-      <h1>Intramon</h1>
-      <div id="username-display">&nbsp;</div>
-    </div>
+  <div class="topbar-left">
+    <h1 style="font-family: var(--pixel); font-size:13px; color: var(--screen-green);
+               text-shadow: 0 0 12px rgba(57,255,20,.5); margin:0 0 2px; letter-spacing:.05em;">
+      INTRAMON
+    </h1>
+    <div id="username-display" style="font-family:var(--crt); font-size:17px; color:var(--text-dim);">&nbsp;</div>
   </div>
 
-  <div style="display:flex; align-items:center; gap:10px;">
-    <button id="check-inbox-btn" class="btn-primary">Check Inbox</button>
+  <div class="topbar-right">
+    <button id="check-inbox-btn" class="btn-primary">INBOX</button>
 
-    <div style="display:flex; gap:8px; align-items:center;">
-      <input id="claim-code-input" placeholder="Enter claim code">
-      <button id="claim-code-btn" class="btn-primary">Redeem</button>
+    <div style="display:flex; gap:6px; align-items:center;">
+      <input id="claim-code-input" placeholder="ENTER CODE" style="width:130px;">
+      <button id="claim-code-btn" class="btn-primary">REDEEM</button>
     </div>
 
-    <div id="sort-controls" style="display:flex; align-items:center; gap:8px;">
-      <label for="sort-select" style="color:var(--muted); font-weight:600">Sort</label>
-      <select id="sort-select" style="background:transparent; color:#efeaff; border:1px solid rgba(255,255,255,0.03); padding:8px 10px; border-radius:10px">
-        <option value="name">Name</option>
-        <option value="rarity">Rarity</option>
-        <option value="element">Element</option>
+    <div id="sort-controls">
+      <label for="sort-select">SORT</label>
+      <select id="sort-select">
+        <option value="name">NAME</option>
+        <option value="rarity">RARITY</option>
+        <option value="element">ELEMENT</option>
       </select>
-      <button id="sort-order-btn" title="Toggle order">⬆️</button>
+      <button id="sort-order-btn" class="btn-primary" title="Toggle order">▲</button>
     </div>
 
-    <div id="crystal-counter" style="margin-left:18px;">
+    <div id="crystal-counter">
       💎 <span id="crystal-amount">0</span>
     </div>
   </div>
@@ -194,60 +579,66 @@
 
 <main id="main-container">
   <aside id="leaderboard">
-    <h3>Leaderboard</h3>
+    <h3>— HIGH SCORES —</h3>
     <ol id="leaderboard-list"></ol>
     <div style="display:flex; justify-content:flex-end; margin-top:12px;">
-      <button id="leaderboard-refresh-btn" class="btn-primary" style="padding:8px 10px; font-size:13px">Refresh</button>
+      <button id="leaderboard-refresh-btn" class="btn-primary">REFRESH</button>
     </div>
   </aside>
 
-  <section style="flex:1">
+  <section style="flex:1;">
     <div id="monster-grid"></div>
-    <div style="display:flex; justify-content:center; margin-top:18px;">
-      <button id="login-btn" class="btn-primary">Login via 42</button>
-    </div>
   </section>
 </main>
 
-<!-- Monster Modal -->
+<!-- MONSTER MODAL -->
 <div id="monster-modal" class="modal" aria-hidden="true">
   <div class="modal-content">
-    <span class="close-btn">&times;</span>
-    <img id="modal-img" src="" alt="Monster">
-    <h2 id="modal-name"></h2>
-    <small id="modal-rarity"></small>
-    <div class="stats">
-      <p><b>HP:</b> <span id="modal-hp"></span></p>
-      <p><b>Attack:</b> <span id="modal-attack"></span></p>
-      <p><b>Defense:</b> <span id="modal-defense"></span></p>
+    <div class="modal-titlebar">
+      <span>MONSTER DATA</span>
+      <button class="close-btn">✕ CLOSE</button>
     </div>
-    <div style="display:flex; gap:10px; justify-content:center; margin-top:12px;">
-      <button id="gift-btn" class="btn-primary">Gift to Player</button>
+    <div class="modal-body">
+      <img id="modal-img" src="" alt="Monster">
+      <h2 id="modal-name"></h2>
+      <small id="modal-rarity"></small>
+      <div class="stat-grid">
+        <div class="stat-row"><span class="stat-label">HP</span><span class="stat-val" id="modal-hp"></span></div>
+        <div class="stat-row"><span class="stat-label">ATK</span><span class="stat-val" id="modal-attack"></span></div>
+        <div class="stat-row"><span class="stat-label">DEF</span><span class="stat-val" id="modal-defense"></span></div>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button id="gift-btn" class="btn-primary">GIFT TO PLAYER</button>
     </div>
   </div>
 </div>
 
-<!-- Inbox Modal -->
+<!-- INBOX MODAL -->
 <div id="inbox-modal" class="modal" aria-hidden="true">
   <div class="modal-content">
-    <span class="close-btn">&times;</span>
-    <h3 id="inbox-reason"></h3>
-    <img id="inbox-img" src="" alt="Inbox Monster">
-    <h2 id="inbox-name"></h2>
-    <small id="inbox-rarity"></small>
-    <div style="display:flex; gap:10px; justify-content:center; margin-top:12px;">
-      <button id="claim-btn" class="btn-primary">Claim Monster</button>
-      <button id="claim-all-btn" class="btn-primary">Claim All</button>
+    <div class="modal-titlebar">
+      <span>INCOMING TRANSFER</span>
+      <button class="close-btn">✕ CLOSE</button>
     </div>
-    <span id="inbox-count"></span>
+    <div class="modal-body">
+      <h3 id="inbox-reason"></h3>
+      <img id="inbox-img" src="" alt="Inbox Monster">
+      <h2 id="inbox-name"></h2>
+      <small id="inbox-rarity"></small>
+      <span id="inbox-count"></span>
+    </div>
+    <div class="modal-actions">
+      <button id="claim-btn" class="btn-primary">CLAIM</button>
+      <button id="claim-all-btn" class="btn-primary">CLAIM ALL</button>
+    </div>
   </div>
 </div>
 
 <script>
-// =========================
-// MODULED FRONTEND LOGIC
-// =========================
-
+/* =========================
+   STATE & CONSTANTS
+   ========================= */
 const state = {
   monsters: [],
   currentSort: { key: 'name', ascending: true },
@@ -255,290 +646,326 @@ const state = {
   inboxIndex: 0
 };
 
-const elementColors = { Electro:'#FFD700', Water:'#00BFFF', Fire:'#FF4500', Ice:'#00FFFF', Plant:'#32CD32', Ground:'#8B4513' };
+const elementColors = {
+  Electro:'#FFD700', Water:'#00e5ff', Fire:'#FF4500',
+  Ice:'#00FFFF', Plant:'#39ff14', Ground:'#cd853f'
+};
 
-function getRarityColor(rarity) {
-  switch(rarity?.toLowerCase()){
-    case 'common': return '#4CAF50';
-    case 'rare': return '#2196F3';
-    case 'epic': return '#9C27B0';
-    case 'legendary': return '#FF9800';
-    default: return '#555';
+function getRarityColor(r) {
+  switch((r||'').toLowerCase()) {
+    case 'common':    return '#39ff14';
+    case 'rare':      return '#00e5ff';
+    case 'epic':      return '#ff00aa';
+    case 'legendary': return '#ffb300';
+    default:          return '#555';
   }
 }
 
-/* -------------------------
-   MONSTER MODAL FUNCTIONS
-------------------------- */
+/* =========================
+   MONSTER MODAL
+   ========================= */
 const monsterModalEl = document.getElementById('monster-modal');
-function openMonsterModal(monster){
-  document.getElementById('modal-img').src = monster.image || '/monsters/placeholder.png';
-  document.getElementById('modal-name').textContent = monster.name;
-  document.getElementById('modal-rarity').textContent = monster.rarity.toUpperCase();
-  document.getElementById('modal-rarity').style.color = getRarityColor(monster.rarity);
-  document.getElementById('modal-hp').textContent = monster.hp;
-  document.getElementById('modal-attack').textContent = monster.attack;
-  document.getElementById('modal-defense').textContent = monster.defense;
+
+function openMonsterModal(m) {
+  document.getElementById('modal-img').src = m.image || '/monsters/placeholder.png';
+  document.getElementById('modal-name').textContent = m.name;
+  document.getElementById('modal-rarity').textContent = '★ ' + m.rarity.toUpperCase() + ' ★';
+  document.getElementById('modal-rarity').style.color = getRarityColor(m.rarity);
+  document.getElementById('modal-hp').textContent = m.hp;
+  document.getElementById('modal-attack').textContent = m.attack;
+  document.getElementById('modal-defense').textContent = m.defense;
   monsterModalEl.classList.add('show');
-  document.getElementById('gift-btn').onclick = () => giftMonster(monster);
+  document.getElementById('gift-btn').onclick = () => giftMonster(m);
+  monsterModalEl.querySelector('.modal-titlebar').style.borderTopColor = getRarityColor(m.rarity);
+  monsterModalEl.querySelector('.modal-content').style.borderTopColor = getRarityColor(m.rarity);
 }
-function closeMonsterModal(){ monsterModalEl.classList.remove('show'); }
+function closeMonsterModal() { monsterModalEl.classList.remove('show'); }
 monsterModalEl.querySelector('.close-btn').addEventListener('click', closeMonsterModal);
-monsterModalEl.addEventListener('click', e => { if(e.target===monsterModalEl) closeMonsterModal(); });
+monsterModalEl.addEventListener('click', e => { if (e.target === monsterModalEl) closeMonsterModal(); });
 
-/* -------------------------
+/* =========================
    RENDER MONSTERS
-------------------------- */
+   ========================= */
 function renderMonsters(monsters) {
-  const gridEl = document.getElementById('monster-grid');
-  gridEl.innerHTML = '';
+  const grid = document.getElementById('monster-grid');
+  grid.innerHTML = '';
 
-  // Sort monsters according to current sort settings
   const sorted = [...monsters].sort((a, b) => {
     const dir = state.currentSort.ascending ? 1 : -1;
-
     if (state.currentSort.key === 'rarity') {
-      const order = ['common', 'rare', 'epic', 'legendary'];
+      const order = ['common','rare','epic','legendary'];
       return (order.indexOf(a.rarity.toLowerCase()) - order.indexOf(b.rarity.toLowerCase())) * dir;
     }
-
     if (state.currentSort.key === 'element') {
-      if (a.element === b.element)
-        return a.name.localeCompare(b.name) * dir;
+      if (a.element === b.element) return a.name.localeCompare(b.name) * dir;
       return a.element.localeCompare(b.element) * dir;
     }
-
-    // default sort by name
     return a.name.localeCompare(b.name) * dir;
   });
 
   sorted.forEach((m, idx) => {
     const card = document.createElement('div');
-    card.className = 'monster-card shimmer pulse';
-    card.setAttribute('data-loaded', 'true');
+    card.className = 'monster-card';
     card.setAttribute('data-rarity', (m.rarity || '').toLowerCase());
 
-    // Rarity border
-    const rarityColor = getRarityColor(m.rarity);
-    card.style.borderImageSource = `linear-gradient(135deg, ${rarityColor}, rgba(255,255,255,0.2))`;
+    const elemColor = elementColors[m.element] || '#777';
 
-    // Shimmer color based on rarity
-    let alpha = 0.08; // common
-    switch ((m.rarity || '').toLowerCase()) {
-      case 'rare': alpha = 0.12; break;
-      case 'epic': alpha = 0.16; break;
-      case 'legendary': alpha = 0.22; break;
-    }
-    const shimmerColor = rarityColor.startsWith('#') 
-      ? hexToRgba(rarityColor, alpha) 
-      : `rgba(${rarityColor},${alpha})`;
-    card.style.setProperty('--shimmer-color', shimmerColor);
-
-    // Card content
     card.innerHTML = `
-      <img src="${m.image || '/monsters/placeholder.png'}" 
-           alt="${m.name}" 
-           onerror="this.onerror=null;this.src='/monsters/placeholder.png';">
-      <h3 style="color:${elementColors[m.element] || '#555'}">${m.name}</h3>
-      <small>${m.rarity.toUpperCase()}</small>
+      <div class="card-header">
+        <span>${m.element || '???'}</span>
+        <span>★${(m.rarity||'').toUpperCase().charAt(0)}</span>
+      </div>
+      <div class="card-img-wrap">
+        <img src="${m.image || '/monsters/placeholder.png'}"
+             alt="${m.name}"
+             onerror="this.onerror=null;this.src='/monsters/placeholder.png';">
+      </div>
+      <div class="card-footer">
+        <div class="card-name">${m.name}</div>
+        <div class="card-element" style="color:${elemColor}">${m.element || '???'}</div>
+      </div>
     `;
 
-    // Open modal on click
     card.addEventListener('click', () => openMonsterModal(m));
+    card.style.animationDelay = `${idx * 40}ms`;
+    setTimeout(() => card.setAttribute('data-loaded', 'true'), 10);
 
-    // Staggered entrance animation
-    card.style.animationDelay = `${idx * 45}ms`;
-
-    gridEl.appendChild(card);
+    grid.appendChild(card);
   });
-
-  // Utility function to convert hex to rgba
-  function hexToRgba(hex, alpha = 1) {
-    hex = hex.replace('#', '');
-    if (hex.length === 3) hex = hex.split('').map(ch => ch + ch).join('');
-    const int = parseInt(hex, 16);
-    const r = (int >> 16) & 255;
-    const g = (int >> 8) & 255;
-    const b = int & 255;
-    return `rgba(${r},${g},${b},${alpha})`;
-  }
 }
 
-
-
-/* -------------------------
+/* =========================
    FETCH MONSTERS
-------------------------- */
-async function fetchMonsters(){
-  try{
-    const res=await fetch('/my-monsters');
-    if(!res.ok) return;
-    const data=await res.json();
-    state.monsters=data.monsters||[];
+   ========================= */
+async function fetchMonsters() {
+  try {
+    const res = await fetch('/my-monsters');
+    if (!res.ok) return;
+    const data = await res.json();
+    state.monsters = data.monsters || [];
     updateUserUI(data);
     renderMonsters(state.monsters);
-  }catch(err){ console.error(err); }
+  } catch(err) { console.error(err); }
 }
 
-/* -------------------------
-   USER/COALITION UI
-------------------------- */
-function updateUserUI(data){
-  const usernameEl=document.getElementById('username-display');
-  usernameEl.textContent=`Logged in as: ${data.name} (${data.coalitionName||'Unknown'})`;
-  document.getElementById('crystal-amount').textContent=data.crystals??0;
+/* =========================
+   USER / COALITION UI
+   ========================= */
+function updateUserUI(data) {
+  document.getElementById('username-display').textContent =
+    `> ${data.name}  [${data.coalitionName || 'UNKNOWN'}]`;
+  document.getElementById('crystal-amount').textContent = data.crystals ?? 0;
 
-  const coalitionColor=data.coalitionColor||'#802200';
-  const themedBtns=['check-inbox-btn','claim-code-btn','sort-order-btn','leaderboard-refresh-btn'];
-  themedBtns.forEach(id=>{
-    const btn=document.getElementById(id);
-    if(btn){ btn.style.backgroundColor=coalitionColor; btn.style.borderColor=coalitionColor; }
+  const col = data.coalitionColor || '#39ff14';
+  applyCoalitionTheme(col);
+  ['check-inbox-btn','claim-code-btn','sort-order-btn','leaderboard-refresh-btn'].forEach(id => {
+    const btn = document.getElementById(id);
+    if (btn) {
+      btn.style.background = col;
+      btn.style.borderColor = hexDarken(col, 0.6);
+      btn.style.boxShadow = `3px 3px 0 ${hexDarken(col, 0.6)}`;
+    }
   });
-
-  applyCoalitionTheme(coalitionColor);
 }
 
-function applyCoalitionTheme(hex){
-  function hexToRgb(h){
-    if(!h) return '128,80,36';
-    let hex=h.replace('#',''); if(hex.length===3) hex=hex.split('').map(c=>c+c).join('');
-    const int=parseInt(hex,16);
-    const r=(int>>16)&255,g=(int>>8)&255,b=int&255;
-    return `${r},${g},${b}`;
-  }
-  const rgb=hexToRgb(hex);
-  document.documentElement.style.setProperty('--accent',hex);
-  document.documentElement.style.setProperty('--accent-2',hex);
-  document.documentElement.style.setProperty('--coalition-rgb',rgb);
-  document.documentElement.style.setProperty('--coalition-10',`rgba(${rgb},0.10)`);
-  document.documentElement.style.setProperty('--coalition-06',`rgba(${rgb},0.06)`);
-  document.documentElement.style.setProperty('--coalition-03',`rgba(${rgb},0.03)`);
-  document.documentElement.style.setProperty('--coalition-18',`rgba(${rgb},0.18)`);
-  document.documentElement.style.setProperty('--shadow-glow',`0 0 30px rgba(${rgb},0.22), inset 0 0 40px rgba(${rgb},0.08)`);
+function applyCoalitionTheme(hex) {
+  const rgb = hexToRgb(hex);
+  document.documentElement.style.setProperty('--screen-green', hex);
+  document.documentElement.style.setProperty('--screen-dim', hexDarken(hex, 0.6));
+  document.querySelector('#top-bar').style.borderTopColor = hex;
+  document.querySelector('#leaderboard').style.borderTopColor = hex;
 }
 
-/* -------------------------
+function hexToRgb(h) {
+  let hex = (h||'#39ff14').replace('#','');
+  if (hex.length===3) hex = hex.split('').map(c=>c+c).join('');
+  const n = parseInt(hex,16);
+  return `${(n>>16)&255},${(n>>8)&255},${n&255}`;
+}
+function hexDarken(hex, factor) {
+  let h = hex.replace('#','');
+  if(h.length===3) h=h.split('').map(c=>c+c).join('');
+  const n = parseInt(h,16);
+  const r = Math.round(((n>>16)&255)*factor);
+  const g = Math.round(((n>>8)&255)*factor);
+  const b = Math.round((n&255)*factor);
+  return `rgb(${r},${g},${b})`;
+}
+
+/* =========================
    LEADERBOARD
-------------------------- */
-async function fetchLeaderboard(){
-  try{
-    const res=await fetch('/leaderboard');
-    if(!res.ok) throw new Error();
-    const data=await res.json();
-    const listEl=document.getElementById('leaderboard-list');
-    listEl.innerHTML='';
-    data.leaderboard.forEach(p=>{
-      const li=document.createElement('li');
-      li.textContent=`${p.name} (${p.monsterCount} mons)`;
-      listEl.appendChild(li);
+   ========================= */
+async function fetchLeaderboard() {
+  try {
+    const res = await fetch('/leaderboard');
+    if (!res.ok) throw new Error();
+    const data = await res.json();
+    const list = document.getElementById('leaderboard-list');
+    list.innerHTML = '';
+    data.leaderboard.forEach((p, i) => {
+      const li = document.createElement('li');
+      const medal = ['🥇','🥈','🥉'][i] || `${i+1}.`;
+      li.textContent = `${medal} ${p.name} — ${p.monsterCount}`;
+      list.appendChild(li);
     });
-  }catch(err){ console.error(err); }
+  } catch(err) { console.error(err); }
 }
 
-/* -------------------------
+/* =========================
    GIFT MONSTER
-------------------------- */
-async function giftMonster(monster){
-  const toUsername=prompt('Enter receiver username:');
-  if(!toUsername) return;
-  try{
-    const userRes=await fetch(`/find-user/${toUsername}`);
-    const userData=await userRes.json();
-    if(!userData.exists){ alert('User not found'); return; }
-    const res=await fetch('/gift',{method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({toPlayerId:userData.playerId, offeredMonsters:[monster]})});
-    const result=await res.json();
-    if(res.ok){ alert('Monster sent to inbox!'); closeMonsterModal(); fetchMonsters(); }
-    else{ alert('Failed to gift: '+(result.error||'Unknown')); }
-  }catch(err){ console.error(err); alert('Gift failed: '+err.message); }
+   ========================= */
+async function giftMonster(monster) {
+  const to = prompt('ENTER RECEIVER USERNAME:');
+  if (!to) return;
+  try {
+    const uRes = await fetch(`/find-user/${to}`);
+    const uData = await uRes.json();
+    if (!uData.exists) { alert('USER NOT FOUND'); return; }
+    const res = await fetch('/gift', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ toPlayerId: uData.playerId, offeredMonsters: [monster] })
+    });
+    const result = await res.json();
+    if (res.ok) { alert('MONSTER SENT TO INBOX!'); closeMonsterModal(); fetchMonsters(); }
+    else alert('GIFT FAILED: ' + (result.error||'UNKNOWN ERROR'));
+  } catch(err) { alert('GIFT FAILED: '+err.message); }
 }
 
-/* -------------------------
+/* =========================
    INBOX MODAL
-------------------------- */
-const inboxModalEl=document.getElementById('inbox-modal');
-const inboxEls={reason:document.getElementById('inbox-reason'), img:document.getElementById('inbox-img'), name:document.getElementById('inbox-name'), rarity:document.getElementById('inbox-rarity'), claimBtn:document.getElementById('claim-btn'), count:document.getElementById('inbox-count')};
+   ========================= */
+const inboxModalEl = document.getElementById('inbox-modal');
+const inboxEls = {
+  reason: document.getElementById('inbox-reason'),
+  img: document.getElementById('inbox-img'),
+  name: document.getElementById('inbox-name'),
+  rarity: document.getElementById('inbox-rarity'),
+  claimBtn: document.getElementById('claim-btn'),
+  count: document.getElementById('inbox-count')
+};
 
-async function checkInbox(){
-  try{
-    const res=await fetch('/my-inbox');
-    const data=await res.json();
-    if(!data.inbox.length){ alert('Inbox empty'); inboxEls.count.textContent=''; return; }
-    state.inboxQueue=data.inbox; state.inboxIndex=0;
+async function checkInbox() {
+  try {
+    const res = await fetch('/my-inbox');
+    const data = await res.json();
+    if (!data.inbox.length) { alert('INBOX EMPTY'); return; }
+    state.inboxQueue = data.inbox;
+    state.inboxIndex = 0;
     updateInboxCount();
-    showInbox(state.inboxIndex);
-  }catch(err){ console.error(err); alert(err.message); }
+    showInbox(0);
+  } catch(err) { alert(err.message); }
 }
-function updateInboxCount(){ const cnt=state.inboxQueue.length-state.inboxIndex; inboxEls.count.textContent=`Inbox: ${cnt} monster${cnt!==1?'s':''}`; }
-function showInbox(i){
-  if(i>=state.inboxQueue.length){ inboxModalEl.classList.remove('show'); state.inboxQueue=[]; state.inboxIndex=0; updateInboxCount(); fetchMonsters(); return; }
-  const mon=state.inboxQueue[i];
-  inboxEls.reason.textContent=`Reason: ${mon.reason.charAt(0).toUpperCase()+mon.reason.slice(1)}`;
-  inboxEls.name.textContent=mon.name;
-  inboxEls.rarity.textContent=mon.rarity.toUpperCase();
-  inboxEls.rarity.style.color=getRarityColor(mon.rarity);
-  inboxEls.img.src=mon.image||'/monsters/placeholder.png';
+
+function updateInboxCount() {
+  const cnt = state.inboxQueue.length - state.inboxIndex;
+  inboxEls.count.textContent = `[ ${cnt} MONSTER${cnt!==1?'S':''} PENDING ]`;
+}
+
+function showInbox(i) {
+  if (i >= state.inboxQueue.length) {
+    inboxModalEl.classList.remove('show');
+    state.inboxQueue = []; state.inboxIndex = 0;
+    fetchMonsters(); return;
+  }
+  const mon = state.inboxQueue[i];
+  inboxEls.reason.textContent = `// REASON: ${mon.reason.toUpperCase()}`;
+  inboxEls.name.textContent = mon.name;
+  inboxEls.rarity.textContent = '★ ' + mon.rarity.toUpperCase() + ' ★';
+  inboxEls.rarity.style.color = getRarityColor(mon.rarity);
+  inboxEls.img.src = mon.image || '/monsters/placeholder.png';
   inboxModalEl.classList.add('show');
+  inboxEls.claimBtn.onclick = () => claimMonster(mon.instanceId);
   updateInboxCount();
-  inboxEls.claimBtn.onclick=()=>claimMonster(mon.instanceId);
 }
-async function claimMonster(id){ try{ const res=await fetch(`/claim/${id}`,{method:'POST'}); if(!res.ok) throw new Error('Claim failed'); state.inboxIndex++; showInbox(state.inboxIndex);}catch(err){alert(err.message);} }
-document.getElementById('check-inbox-btn').addEventListener('click',checkInbox);
-document.getElementById('claim-all-btn').addEventListener('click',async ()=>{
-  try{
-    const res=await fetch('/claim-all',{method:'POST'}); const data=await res.json();
-    if(res.ok){ alert(data.message); state.inboxQueue=[]; state.inboxIndex=0; inboxModalEl.classList.remove('show'); updateInboxCount(); fetchMonsters();}
-    else{ alert(data.error||'Failed to claim all'); }
-  }catch(err){alert('Error claiming all');}
-});
-inboxModalEl.querySelector('.close-btn').addEventListener('click',()=>inboxModalEl.classList.remove('show'));
-inboxModalEl.addEventListener('click',e=>{if(e.target===inboxModalEl) inboxModalEl.classList.remove('show');});
 
-/* -------------------------
+async function claimMonster(id) {
+  try {
+    const res = await fetch(`/claim/${id}`, { method:'POST' });
+    if (!res.ok) throw new Error('CLAIM FAILED');
+    state.inboxIndex++;
+    showInbox(state.inboxIndex);
+  } catch(err) { alert(err.message); }
+}
+
+document.getElementById('check-inbox-btn').addEventListener('click', checkInbox);
+document.getElementById('claim-all-btn').addEventListener('click', async () => {
+  try {
+    const res = await fetch('/claim-all', { method:'POST' });
+    const data = await res.json();
+    if (res.ok) {
+      alert(data.message);
+      state.inboxQueue=[]; state.inboxIndex=0;
+      inboxModalEl.classList.remove('show');
+      fetchMonsters();
+    } else alert(data.error||'FAILED TO CLAIM ALL');
+  } catch { alert('ERROR CLAIMING ALL'); }
+});
+
+inboxModalEl.querySelector('.close-btn').addEventListener('click', () => inboxModalEl.classList.remove('show'));
+inboxModalEl.addEventListener('click', e => { if(e.target===inboxModalEl) inboxModalEl.classList.remove('show'); });
+
+/* =========================
    SORT CONTROLS
-------------------------- */
-const sortSelect=document.getElementById('sort-select');
-const sortOrderBtn=document.getElementById('sort-order-btn');
-sortSelect.addEventListener('change',()=>{ state.currentSort.key=sortSelect.value; renderMonsters(state.monsters); });
-sortOrderBtn.addEventListener('click',()=>{ state.currentSort.ascending=!state.currentSort.ascending; sortOrderBtn.textContent=state.currentSort.ascending?'⬆️':'⬇️'; renderMonsters(state.monsters); });
-
-/* -------------------------
-   CLAIM CODE
-------------------------- */
-document.getElementById('claim-code-btn').addEventListener('click',async ()=>{
-  const code=document.getElementById('claim-code-input').value.trim();
-  if(!code) return alert('Enter a code!');
-  try{
-    const res=await fetch('/claim-code',{method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({code})});
-    const data=await res.json();
-    if(res.ok){ alert(`You received ${data.monster.name}! Check inbox!`); document.getElementById('claim-code-input').value='';}
-    else alert(data.error||'Invalid code');
-  }catch(err){alert('Error redeeming code');}
+   ========================= */
+document.getElementById('sort-select').addEventListener('change', e => {
+  state.currentSort.key = e.target.value;
+  renderMonsters(state.monsters);
+});
+document.getElementById('sort-order-btn').addEventListener('click', () => {
+  state.currentSort.ascending = !state.currentSort.ascending;
+  document.getElementById('sort-order-btn').textContent = state.currentSort.ascending ? '▲' : '▼';
+  renderMonsters(state.monsters);
 });
 
-/* -------------------------
+/* =========================
+   CLAIM CODE
+   ========================= */
+document.getElementById('claim-code-btn').addEventListener('click', async () => {
+  const code = document.getElementById('claim-code-input').value.trim();
+  if (!code) return alert('ENTER A CODE!');
+  try {
+    const res = await fetch('/claim-code', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ code })
+    });
+    const data = await res.json();
+    if (res.ok) {
+      alert(`RECEIVED: ${data.monster.name}! CHECK INBOX!`);
+      document.getElementById('claim-code-input').value = '';
+    } else alert(data.error || 'INVALID CODE');
+  } catch { alert('ERROR REDEEMING CODE'); }
+});
+
+/* =========================
    LEADERBOARD REFRESH
-------------------------- */
-document.getElementById('leaderboard-refresh-btn').addEventListener('click',fetchLeaderboard);
+   ========================= */
+document.getElementById('leaderboard-refresh-btn').addEventListener('click', fetchLeaderboard);
 
-/* -------------------------
+/* =========================
    LOGIN / INIT
-------------------------- */
-document.getElementById('login-btn').addEventListener('click',()=>window.location.href='/login');
+   ========================= */
+document.getElementById('login-btn').addEventListener('click', () => window.location.href = '/login');
 
-(async function init(){
-  try{
-    const res=await fetch('/my-monsters');
-    if(res.ok){
-      document.getElementById('login-btn').style.display='none';
-      document.getElementById('top-bar').style.display='flex';
+(async function init() {
+  try {
+    const res = await fetch('/my-monsters');
+    if (res.ok) {
+      document.getElementById('login-screen').style.display = 'none';
+      document.getElementById('top-bar').classList.remove('hidden');
       await fetchMonsters();
       await fetchLeaderboard();
-      try{
-        const logRes=await fetch('/refresh-logtime'); 
-        if(logRes.ok){ const logData=await logRes.json(); if(logData.rewardGranted){ alert(`You earned a reward for logging ${logData.hours} hours today!`); await checkInbox();}}
-      }catch(err){console.error(err);}
+      try {
+        const logRes = await fetch('/refresh-logtime');
+        if (logRes.ok) {
+          const logData = await logRes.json();
+          if (logData.rewardGranted) {
+            alert(`REWARD UNLOCKED! ${logData.hours}H LOGGED TODAY!`);
+            await checkInbox();
+          }
+        }
+      } catch(err) { console.error(err); }
     }
-  }catch(err){ console.log('Not logged in'); }
+  } catch { /* not logged in — boot screen stays */ }
 })();
 </script>
 </body>
