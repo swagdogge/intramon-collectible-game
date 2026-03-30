@@ -4,381 +4,459 @@
 <meta charset="UTF-8">
 <title>Intramon</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323:wght@400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
-/* =========================
-   RETRO BASE — DMG/CGA VIBES
-   ========================= */
+
+/* =============================================
+   MEGA DRIVE / 16-BIT TCG — DESIGN SYSTEM
+   ============================================= */
 :root {
-  --bg:        #0a0a0a;
-  --bg2:       #111111;
-  --screen-green: #39ff14;
-  --screen-dim:   #1a7a0a;
-  --amber:     #ffb300;
-  --amber-dim: #7a5500;
-  --cyan:      #00e5ff;
-  --magenta:   #ff00aa;
-  --red:       #ff2020;
-  --panel-bg:  #111111;
-  --panel-border: #333333;
-  --text:      #d4d4d4;
-  --text-dim:  #777777;
-  --pixel:     'Press Start 2P', monospace;
-  --crt:       'VT323', monospace;
+  /* Palette — warm parchment + saturated JRPG accents */
+  --bg:           #1a1a2e;
+  --bg2:          #16213e;
+  --panel:        #f5e6c8;
+  --panel-dark:   #e8d5a8;
+  --panel-darker: #c9b882;
+  --panel-shadow: #8a7240;
 
-  --rarity-common:    #39ff14;
-  --rarity-rare:      #00e5ff;
-  --rarity-epic:      #ff00aa;
-  --rarity-legendary: #ffb300;
+  --ink:          #2c1810;
+  --ink-soft:     #5c3d2e;
+  --ink-muted:    #8b6f47;
+
+  --red:    #e63946;
+  --blue:   #457b9d;
+  --yellow: #f4a261;
+  --green:  #2d6a4f;
+  --purple: #7b2d8b;
+  --teal:   #1d8a8a;
+
+  /* Rarity colors */
+  --common:    #4a9e4a;
+  --rare:      #2979c9;
+  --epic:      #9c27b0;
+  --legendary: #e6920a;
+
+  /* Element type colors (Pokémon-card inspired) */
+  --el-electro: #f9c80e;
+  --el-water:   #4dabf7;
+  --el-fire:    #ff6b35;
+  --el-ice:     #a8dadc;
+  --el-plant:   #52b788;
+  --el-ground:  #bc6c25;
+
+  --font-display: 'Fredoka One', cursive;
+  --font-body:    'Nunito', sans-serif;
+
+  /* Beveled border */
+  --bevel-light: rgba(255,255,255,0.7);
+  --bevel-dark:  rgba(0,0,0,0.35);
 }
 
-*, *::before, *::after { box-sizing: border-box; }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-html, body {
-  margin: 0; padding: 0; min-height: 100%;
-  background: var(--bg);
-  color: var(--text);
-  font-family: var(--crt);
-  font-size: 18px;
-  line-height: 1.5;
-  -webkit-font-smoothing: none;
-  image-rendering: pixelated;
-  overflow-x: hidden;
+body {
+  font-family: var(--font-body);
+  background:
+    radial-gradient(ellipse at 20% 0%, #2d1b69 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 100%, #1a3a5c 0%, transparent 50%),
+    var(--bg);
+  color: var(--ink);
+  min-height: 100vh;
+  padding: 16px;
+  -webkit-font-smoothing: antialiased;
 }
 
-/* ── SCANLINES overlay ── */
+/* Tile-repeat BG pattern (16-bit floor) */
 body::before {
   content: '';
   pointer-events: none;
-  position: fixed; inset: 0; z-index: 9999;
-  background: repeating-linear-gradient(
-    to bottom,
-    transparent 0px,
-    transparent 2px,
-    rgba(0,0,0,0.18) 2px,
-    rgba(0,0,0,0.18) 4px
-  );
+  position: fixed; inset: 0; z-index: 0;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
+  background-size: 32px 32px;
 }
 
-/* ── CRT screen vignette ── */
-body::after {
-  content: '';
-  pointer-events: none;
-  position: fixed; inset: 0; z-index: 9998;
-  background: radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,0.72) 100%);
-}
-
-/* ── Noise dither ── */
-.noise {
-  position: fixed; inset: 0; z-index: 9997; pointer-events: none; opacity: 0.025;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
-  background-size: 128px 128px;
-}
-
-/* ── Blinking cursor ── */
-@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
-.blink { animation: blink 1s step-end infinite; }
-
-/* ── Pixel border mixin ── */
-.pixel-box {
-  border: 2px solid var(--panel-border);
-  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.04);
-  background: var(--panel-bg);
-  image-rendering: pixelated;
-}
-
-/* ── Retro button ── */
-button {
-  appearance: none; border: none;
-  font-family: var(--pixel);
-  font-size: 7px;
-  padding: 10px 14px;
-  border-radius: 0;
-  cursor: pointer;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  transition: filter .08s, transform .06s;
+/* =============================================
+   PANEL / WINDOW COMPONENT (RPG menu style)
+   ============================================= */
+.rpg-panel {
+  background: var(--panel);
+  border-radius: 10px;
   position: relative;
+  /* Layered bevel effect */
+  box-shadow:
+    0 0 0 3px var(--panel-darker),
+    0 0 0 5px var(--panel-shadow),
+    4px 6px 0 5px rgba(0,0,0,0.4),
+    inset 0 1px 0 var(--bevel-light),
+    inset 0 -1px 0 var(--bevel-dark);
 }
-button:active { transform: translateY(2px); filter: brightness(0.8); }
 
-.btn-primary {
-  background: var(--screen-green);
-  color: #000;
-  border: 2px solid var(--screen-dim);
-  box-shadow: 3px 3px 0 var(--screen-dim);
+.rpg-panel-title {
+  font-family: var(--font-display);
+  font-size: 13px;
+  letter-spacing: 0.05em;
+  color: var(--panel);
+  background: var(--ink);
+  padding: 5px 14px 4px;
+  border-radius: 7px 7px 0 0;
+  display: flex; align-items: center; gap: 8px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.1);
 }
-.btn-primary:hover { filter: brightness(1.15); }
-.btn-primary:active { box-shadow: 1px 1px 0 var(--screen-dim); }
 
-/* ── Inputs ── */
-input, select {
-  background: #000;
-  color: var(--screen-green);
-  border: 2px solid #333;
-  padding: 8px 10px;
-  font-family: var(--crt);
-  font-size: 18px;
-  outline: none;
-  border-radius: 0;
-  -webkit-font-smoothing: none;
-}
-input::placeholder { color: var(--screen-dim); }
-input:focus, select:focus { border-color: var(--screen-green); }
-select option { background: #000; color: var(--screen-green); }
-
-/* =========================
+/* =============================================
    TOP BAR
-   ========================= */
+   ============================================= */
 #top-bar {
   max-width: 1160px;
-  margin: 18px auto 0;
-  padding: 10px 14px;
-  display: flex; align-items: center; justify-content: space-between; gap: 10px;
-  flex-wrap: wrap;
-  border: 2px solid var(--panel-border);
-  border-top: 3px solid var(--screen-green);
-  background: var(--panel-bg);
+  margin: 0 auto 20px;
+  padding: 10px 16px;
+  display: flex; align-items: center;
+  justify-content: space-between;
+  gap: 12px; flex-wrap: wrap;
   position: relative; z-index: 10;
+  border-radius: 10px;
+  background: var(--ink);
+  box-shadow:
+    0 0 0 3px #3d2810,
+    3px 5px 0 3px rgba(0,0,0,0.5),
+    inset 0 1px 0 rgba(255,255,255,0.08);
 }
 #top-bar.hidden { display: none; }
 
-#title-block h1 {
-  font-family: var(--pixel);
-  font-size: 13px;
-  color: var(--screen-green);
-  margin: 0 0 4px;
-  text-shadow: 0 0 12px rgba(57,255,20,0.5);
-  letter-spacing: 0.05em;
+#game-title {
+  font-family: var(--font-display);
+  font-size: 26px;
+  color: var(--yellow);
+  letter-spacing: 0.04em;
+  text-shadow:
+    2px 2px 0 #7a4800,
+    -1px -1px 0 rgba(255,255,255,0.1);
+  line-height: 1;
 }
 #username-display {
-  font-family: var(--crt);
-  font-size: 17px;
-  color: var(--text-dim);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--panel-dark);
+  margin-top: 2px;
 }
 
 #crystal-counter {
-  background: #000;
-  border: 2px solid var(--amber-dim);
-  padding: 6px 12px;
-  font-family: var(--pixel);
-  font-size: 8px;
-  color: var(--amber);
-  text-shadow: 0 0 8px rgba(255,179,0,0.6);
-  display: flex; align-items: center; gap: 8px;
+  background: #2c1810;
+  border: 2px solid var(--yellow);
+  border-radius: 20px;
+  padding: 5px 14px;
+  font-family: var(--font-display);
+  font-size: 15px;
+  color: var(--yellow);
+  display: flex; align-items: center; gap: 6px;
+  box-shadow: 0 2px 0 #7a4800, inset 0 1px 0 rgba(255,200,0,0.15);
 }
-#crystal-amount { color: var(--amber); }
 
-/* =========================
+/* =============================================
+   BUTTONS
+   ============================================= */
+button {
+  appearance: none; border: none; cursor: pointer;
+  font-family: var(--font-display);
+  font-size: 13px;
+  letter-spacing: 0.03em;
+  border-radius: 6px;
+  padding: 8px 16px;
+  transition: transform .08s, box-shadow .08s, filter .08s;
+  position: relative;
+  line-height: 1;
+}
+
+.btn-primary {
+  background: var(--red);
+  color: #fff;
+  box-shadow: 0 4px 0 #8a1020, inset 0 1px 0 rgba(255,255,255,0.25);
+  border: 1px solid #c02030;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+}
+.btn-primary:hover  { filter: brightness(1.1); }
+.btn-primary:active { transform: translateY(3px); box-shadow: 0 1px 0 #8a1020; }
+
+.btn-secondary {
+  background: var(--blue);
+  color: #fff;
+  box-shadow: 0 4px 0 #1a4060, inset 0 1px 0 rgba(255,255,255,0.2);
+  border: 1px solid #1a5070;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+}
+.btn-secondary:hover  { filter: brightness(1.1); }
+.btn-secondary:active { transform: translateY(3px); box-shadow: 0 1px 0 #1a4060; }
+
+/* =============================================
+   INPUTS
+   ============================================= */
+input, select {
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 700;
+  padding: 7px 12px;
+  border-radius: 6px;
+  background: #fff8ee;
+  border: 2px solid var(--panel-darker);
+  color: var(--ink);
+  outline: none;
+  box-shadow: inset 0 2px 3px rgba(0,0,0,0.12);
+}
+input:focus, select:focus { border-color: var(--blue); }
+input::placeholder { color: var(--ink-muted); font-weight: 600; }
+select option { background: #fff8ee; color: var(--ink); }
+
+/* =============================================
    LAYOUT
-   ========================= */
+   ============================================= */
 #main-container {
-  display: flex; gap: 18px; max-width: 1160px;
-  margin: 16px auto 32px;
-  padding: 0 12px;
+  display: flex; gap: 18px;
+  max-width: 1160px; margin: 0 auto;
   align-items: flex-start;
   position: relative; z-index: 4;
 }
 
-/* =========================
+/* =============================================
    LEADERBOARD
-   ========================= */
+   ============================================= */
 #leaderboard {
   width: 220px; flex-shrink: 0;
-  border: 2px solid var(--panel-border);
-  border-top: 3px solid var(--amber);
-  background: var(--panel-bg);
-  padding: 14px;
 }
-#leaderboard h3 {
-  font-family: var(--pixel);
-  font-size: 8px;
-  color: var(--amber);
-  margin: 0 0 12px;
-  text-shadow: 0 0 8px rgba(255,179,0,0.4);
-  text-transform: uppercase;
+#leaderboard-inner {
+  padding: 12px 14px;
 }
 #leaderboard-list {
   list-style: none;
-  padding: 0; margin: 0;
-  font-family: var(--crt);
-  font-size: 17px;
+  padding: 0; margin: 0 0 12px;
 }
 #leaderboard-list li {
-  padding: 5px 0;
-  border-bottom: 1px solid #1e1e1e;
-  color: var(--text);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+  padding: 6px 8px;
+  border-bottom: 2px solid var(--panel-darker);
+  display: flex; align-items: center; gap: 6px;
 }
-#leaderboard-list li:first-child { color: var(--amber); }
-#leaderboard-list li:nth-child(2) { color: var(--text); }
-#leaderboard-list li:nth-child(3) { color: var(--rarity-common); }
+#leaderboard-list li:last-child { border-bottom: none; }
+#leaderboard-list li .rank { 
+  font-family: var(--font-display);
+  font-size: 13px;
+  min-width: 24px;
+  color: var(--ink-muted);
+}
+#leaderboard-list li:first-child .rank { color: var(--legendary); }
+#leaderboard-list li:nth-child(2) .rank { color: var(--ink-soft); }
+#leaderboard-list li:nth-child(3) .rank { color: #b87333; }
 
-/* =========================
+/* =============================================
    MONSTER GRID
-   ========================= */
+   ============================================= */
 #monster-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
-  gap: 14px;
+  grid-template-columns: repeat(auto-fill, minmax(165px, 1fr));
+  gap: 16px;
   flex: 1;
 }
 
-/* ── TCG-style monster card ── */
+/* ── THE CARD — proper TCG layout ── */
 .monster-card {
   position: relative;
   cursor: pointer;
-  background: #0d0d0d;
-  border: 2px solid;
-  display: flex; flex-direction: column;
+  border-radius: 10px;
   overflow: hidden;
-  transition: transform .12s steps(2), filter .12s;
-  image-rendering: pixelated;
+  transition: transform .15s cubic-bezier(.2,.8,.2,1.2), box-shadow .15s;
+  background: var(--panel);
+  /* Outer frame */
+  box-shadow:
+    0 0 0 2px var(--card-border, #555),
+    0 0 0 4px var(--card-outer, #333),
+    3px 5px 0 4px rgba(0,0,0,0.45),
+    inset 0 1px 0 rgba(255,255,255,0.5);
+  display: flex; flex-direction: column;
 }
 .monster-card:hover {
-  transform: translateY(-4px) scale(1.03);
-  filter: brightness(1.1);
+  transform: translateY(-6px) scale(1.03) rotate(-0.5deg);
+  box-shadow:
+    0 0 0 2px var(--card-border, #555),
+    0 0 0 4px var(--card-outer, #333),
+    6px 12px 0 4px rgba(0,0,0,0.5),
+    inset 0 1px 0 rgba(255,255,255,0.5);
+  z-index: 10;
 }
 
-/* rarity color borders */
-.monster-card[data-rarity="common"]    { border-color: var(--rarity-common); }
-.monster-card[data-rarity="rare"]      { border-color: var(--rarity-rare); }
-.monster-card[data-rarity="epic"]      { border-color: var(--rarity-epic); }
-.monster-card[data-rarity="legendary"] { border-color: var(--rarity-legendary); }
+/* Rarity border variables */
+.monster-card[data-rarity="common"]    { --card-border: #5aab5a; --card-outer: #2d6a2d; --type-bg: #2d6a4f; }
+.monster-card[data-rarity="rare"]      { --card-border: #4a90d9; --card-outer: #1a5080; --type-bg: #1a5080; }
+.monster-card[data-rarity="epic"]      { --card-border: #c060d0; --card-outer: #6a1080; --type-bg: #6a1080; }
+.monster-card[data-rarity="legendary"] { --card-border: #f0a020; --card-outer: #905000; --type-bg: #905000; }
 
-/* card header strip */
-.card-header {
-  padding: 4px 6px;
-  font-family: var(--pixel);
-  font-size: 6px;
-  display: flex; justify-content: space-between; align-items: center;
+/* Card top banner — type/name strip like Pokémon card */
+.card-banner {
+  background: var(--type-bg, #444);
+  padding: 5px 8px 4px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.card-banner-name {
+  font-family: var(--font-display);
+  font-size: 11.5px;
+  color: #fff;
+  text-shadow: 1px 1px 0 rgba(0,0,0,0.5);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  max-width: 100px;
+}
+.card-hp-badge {
+  font-family: var(--font-display);
+  font-size: 10px;
+  color: #fff;
+  background: rgba(0,0,0,0.3);
+  border-radius: 4px;
+  padding: 1px 5px;
+  white-space: nowrap;
+}
+
+/* Image area */
+.card-art {
+  position: relative;
+  background: var(--art-bg, #e0d8c8);
+  padding: 8px;
+  display: flex; align-items: center; justify-content: center;
+  min-height: 108px;
+  overflow: hidden;
+}
+/* Type-colored art backgrounds */
+.monster-card[data-element="Electro"] .card-art { background: linear-gradient(160deg, #fff8c0, #f0e060); }
+.monster-card[data-element="Water"]   .card-art { background: linear-gradient(160deg, #c8eeff, #a0d0f0); }
+.monster-card[data-element="Fire"]    .card-art { background: linear-gradient(160deg, #ffe0c0, #ffb080); }
+.monster-card[data-element="Ice"]     .card-art { background: linear-gradient(160deg, #d8f4f8, #b0e0e8); }
+.monster-card[data-element="Plant"]   .card-art { background: linear-gradient(160deg, #d0f0d0, #98d898); }
+.monster-card[data-element="Ground"]  .card-art { background: linear-gradient(160deg, #f0e0c0, #d0a868); }
+
+/* Art inner frame — like a card illustration box */
+.card-art::before {
+  content: '';
+  position: absolute; inset: 4px;
+  border: 1.5px solid rgba(0,0,0,0.12);
+  border-radius: 4px;
+  pointer-events: none;
+}
+
+.card-art img {
+  width: 82px; height: 82px;
+  object-fit: contain;
+  image-rendering: auto;
+  position: relative; z-index: 1;
+  transition: transform .2s cubic-bezier(.2,.8,.2,1.2), filter .2s;
+  filter: drop-shadow(2px 3px 3px rgba(0,0,0,0.25));
+}
+.monster-card:hover .card-art img {
+  transform: scale(1.08) translateY(-3px);
+  filter: drop-shadow(3px 6px 6px rgba(0,0,0,0.35));
+}
+
+/* Rarity sparkle for legendary */
+.monster-card[data-rarity="legendary"] .card-art::after {
+  content: '';
+  position: absolute; inset: 0; z-index: 0;
+  background: linear-gradient(
+    120deg,
+    transparent 25%, rgba(255,220,80,0.25) 45%,
+    rgba(255,255,200,0.35) 50%, rgba(255,220,80,0.25) 55%,
+    transparent 75%
+  );
+  background-size: 300% 100%;
+  animation: cardShimmer 2.5s linear infinite;
+}
+@keyframes cardShimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -100% 0; }
+}
+
+/* Card bottom info strip */
+.card-info {
+  padding: 5px 8px 7px;
+  background: var(--panel-dark);
+  border-top: 2px solid var(--card-border, #aaa);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.card-rarity-pip {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--card-border, #999);
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
-.monster-card[data-rarity="common"]    .card-header { background: #0b1f0b; color: var(--rarity-common); }
-.monster-card[data-rarity="rare"]      .card-header { background: #0a1a22; color: var(--rarity-rare); }
-.monster-card[data-rarity="epic"]      .card-header { background: #1a0015; color: var(--rarity-epic); }
-.monster-card[data-rarity="legendary"] .card-header { background: #1e1500; color: var(--rarity-legendary); }
-
-/* image area — dithered style bg */
-.card-img-wrap {
-  background: repeating-linear-gradient(
-    45deg,
-    #111 0px, #111 2px,
-    #0d0d0d 2px, #0d0d0d 4px
-  );
-  display: flex; align-items: center; justify-content: center;
-  padding: 10px;
-  min-height: 110px;
-  position: relative;
-}
-.card-img-wrap img {
-  width: 80px; height: 80px;
-  object-fit: contain;
-  image-rendering: pixelated;
-  transition: transform .2s steps(3);
-}
-.monster-card:hover .card-img-wrap img {
-  transform: translateY(-4px);
+.card-type-pill {
+  font-size: 10px;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: 20px;
+  color: #fff;
+  background: var(--type-bg, #666);
+  text-shadow: 0 1px 1px rgba(0,0,0,0.4);
 }
 
-/* rarity glow on image */
-.monster-card[data-rarity="common"]    .card-img-wrap img { filter: drop-shadow(0 0 5px var(--rarity-common)); }
-.monster-card[data-rarity="rare"]      .card-img-wrap img { filter: drop-shadow(0 0 5px var(--rarity-rare)); }
-.monster-card[data-rarity="epic"]      .card-img-wrap img { filter: drop-shadow(0 0 5px var(--rarity-epic)); }
-.monster-card[data-rarity="legendary"] .card-img-wrap img { filter: drop-shadow(0 0 8px var(--rarity-legendary)) drop-shadow(0 0 16px var(--rarity-legendary)); }
-
-/* card footer */
-.card-footer {
-  padding: 6px 8px;
-  background: #0a0a0a;
-  border-top: 1px solid #1e1e1e;
-}
-.card-name {
-  font-family: var(--pixel);
-  font-size: 6.5px;
-  color: var(--text);
-  margin: 0 0 3px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  text-transform: uppercase;
-}
-.card-element {
-  font-family: var(--crt);
-  font-size: 15px;
-  color: var(--text-dim);
-}
-
-/* legendary shimmer */
-.monster-card[data-rarity="legendary"]::before {
-  content: '';
-  position: absolute; inset: 0; z-index: 2; pointer-events: none;
-  background: linear-gradient(
-    115deg,
-    transparent 30%,
-    rgba(255,179,0,0.07) 50%,
-    transparent 70%
-  );
-  background-size: 200% 200%;
-  animation: holographic 3s linear infinite;
-}
-@keyframes holographic {
-  0%   { background-position: 200% 0%; }
-  100% { background-position: -200% 0%; }
-}
-
-/* entrance animation */
-@keyframes pixelIn {
-  from { opacity:0; transform: translateY(12px) scale(.95); clip-path: inset(100% 0 0 0); }
-  to   { opacity:1; transform: translateY(0)   scale(1);    clip-path: inset(0% 0 0 0); }
+/* Entrance animation */
+@keyframes cardDeal {
+  from { opacity: 0; transform: translateY(20px) scale(.92) rotate(2deg); }
+  to   { opacity: 1; transform: translateY(0) scale(1) rotate(0deg); }
 }
 .monster-card[data-loaded="true"] {
-  animation: pixelIn .3s steps(6) both;
+  animation: cardDeal .35s cubic-bezier(.2,.8,.2,1) both;
 }
 
-/* =========================
-   MODALS
-   ========================= */
+/* =============================================
+   MODALS — RPG dialog box style
+   ============================================= */
 .modal {
   display: none; position: fixed; inset: 0;
-  background: rgba(0,0,0,0.85);
+  background: rgba(10,8,20,0.78);
   justify-content: center; align-items: center;
   padding: 20px; z-index: 1000;
 }
 .modal.show { display: flex; }
 
 .modal-content {
-  width: min(400px,96%);
-  background: #0a0a0a;
-  border: 2px solid #333;
-  border-top: 3px solid var(--screen-green);
-  padding: 0;
-  position: relative;
-  font-family: var(--crt);
+  width: min(420px, 96%);
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--panel);
+  box-shadow:
+    0 0 0 3px var(--panel-darker),
+    0 0 0 6px var(--panel-shadow),
+    6px 10px 0 6px rgba(0,0,0,0.5),
+    inset 0 1px 0 rgba(255,255,255,0.6);
+  animation: modalPop .2s cubic-bezier(.2,.8,.2,1.3);
+}
+@keyframes modalPop {
+  from { opacity:0; transform: scale(.88) translateY(12px); }
+  to   { opacity:1; transform: scale(1)   translateY(0); }
 }
 
-/* modal title bar */
-.modal-titlebar {
-  background: #111;
-  border-bottom: 2px solid #222;
-  padding: 8px 14px;
+.modal-header {
+  background: var(--ink);
+  padding: 10px 16px;
   display: flex; align-items: center; justify-content: space-between;
-  font-family: var(--pixel);
-  font-size: 8px;
-  color: var(--screen-green);
-  text-shadow: 0 0 8px rgba(57,255,20,0.4);
 }
-.modal-titlebar .close-btn {
-  background: var(--red);
-  color: #000;
-  border: 2px solid #900;
-  box-shadow: 2px 2px 0 #500;
-  font-family: var(--pixel);
-  font-size: 7px;
-  padding: 4px 8px;
+.modal-header-title {
+  font-family: var(--font-display);
+  font-size: 16px;
+  color: var(--yellow);
+  text-shadow: 1px 1px 0 #7a4800;
+}
+.close-btn {
+  background: #c0392b;
+  color: #fff;
+  border: none;
+  font-family: var(--font-display);
+  font-size: 11px;
+  padding: 5px 10px;
+  border-radius: 4px;
+  box-shadow: 0 3px 0 #7a1008, inset 0 1px 0 rgba(255,255,255,0.2);
   cursor: pointer;
-  line-height: 1;
 }
+.close-btn:active { transform: translateY(2px); box-shadow: 0 1px 0 #7a1008; }
 
 .modal-body {
   padding: 18px;
@@ -386,189 +464,260 @@ select option { background: #000; color: var(--screen-green); }
   text-align: center;
 }
 
-.modal-body img {
-  width: 140px; height: 140px;
+/* Modal card-style illustration */
+.modal-art-box {
+  width: 150px; height: 150px;
+  border-radius: 8px;
+  border: 3px solid var(--panel-darker);
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.2), 0 3px 0 var(--panel-shadow);
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden;
+}
+.modal-art-box img {
+  width: 120px; height: 120px;
   object-fit: contain;
-  image-rendering: pixelated;
-  background: repeating-linear-gradient(
-    45deg, #111 0px, #111 2px, #0d0d0d 2px, #0d0d0d 4px
-  );
-  padding: 10px;
-  border: 2px solid #1e1e1e;
+  filter: drop-shadow(2px 4px 4px rgba(0,0,0,0.3));
 }
 
 #modal-name, #inbox-name {
-  font-family: var(--pixel);
-  font-size: 10px;
-  color: var(--text);
-  text-transform: uppercase;
-  margin: 4px 0 0;
-}
-
-#modal-rarity, #inbox-rarity {
-  font-family: var(--crt);
+  font-family: var(--font-display);
   font-size: 20px;
-  letter-spacing: 0.08em;
+  color: var(--ink);
+  margin-top: 4px;
+}
+#modal-rarity, #inbox-rarity {
+  font-family: var(--font-display);
+  font-size: 13px;
+  letter-spacing: 0.06em;
 }
 
-/* stat table */
-.stat-grid {
+/* Stat bars — like a Pokémon card's HP/attack display */
+.stat-list {
   width: 100%;
-  border: 1px solid #1e1e1e;
-  font-family: var(--crt);
-  font-size: 18px;
-  margin-top: 6px;
+  background: var(--panel-dark);
+  border-radius: 6px;
+  border: 2px solid var(--panel-darker);
+  overflow: hidden;
+  margin-top: 4px;
 }
 .stat-row {
-  display: flex; justify-content: space-between;
-  padding: 4px 10px;
-  border-bottom: 1px solid #1a1a1a;
+  display: flex; align-items: center;
+  padding: 6px 12px; gap: 10px;
+  border-bottom: 1px solid var(--panel-darker);
 }
 .stat-row:last-child { border-bottom: none; }
-.stat-label { color: var(--text-dim); }
-.stat-val   { color: var(--screen-green); font-weight: bold; }
+.stat-label {
+  font-family: var(--font-display);
+  font-size: 11px;
+  color: var(--ink-muted);
+  width: 36px; text-align: left;
+}
+.stat-bar-wrap {
+  flex: 1; height: 10px;
+  background: var(--panel-darker);
+  border-radius: 5px;
+  overflow: hidden;
+  border: 1px solid var(--panel-shadow);
+}
+.stat-bar {
+  height: 100%;
+  border-radius: 5px;
+  transition: width .4s ease;
+}
+.stat-bar.hp    { background: linear-gradient(90deg, #e63946, #ff7c85); }
+.stat-bar.atk   { background: linear-gradient(90deg, #f4a261, #ffd166); }
+.stat-bar.def   { background: linear-gradient(90deg, #457b9d, #74b8d8); }
+.stat-val {
+  font-family: var(--font-display);
+  font-size: 12px;
+  color: var(--ink);
+  min-width: 28px;
+  text-align: right;
+}
 
-.modal-actions {
-  display: flex; gap: 10px; justify-content: center;
+.modal-footer {
   padding: 12px 18px;
-  border-top: 1px solid #1e1e1e;
+  background: var(--panel-dark);
+  border-top: 2px solid var(--panel-darker);
+  display: flex; gap: 10px; justify-content: center;
 }
 
 #inbox-count {
-  font-family: var(--crt);
-  font-size: 17px;
-  color: var(--text-dim);
-  margin-top: 4px;
+  font-size: 13px; font-weight: 700;
+  color: var(--ink-muted);
+  background: var(--panel-dark);
+  border-radius: 20px;
+  padding: 3px 12px;
+  border: 1px solid var(--panel-darker);
 }
 #inbox-reason {
-  font-family: var(--pixel);
-  font-size: 7px;
-  color: var(--amber);
-  text-shadow: 0 0 6px rgba(255,179,0,0.4);
-  text-transform: uppercase;
-  margin: 0;
+  font-family: var(--font-display);
+  font-size: 12px;
+  color: var(--blue);
+  letter-spacing: 0.04em;
 }
 
-/* =========================
-   LOGIN / BOOT SCREEN
-   ========================= */
+/* =============================================
+   LOGIN SCREEN — cartridge title screen
+   ============================================= */
 #login-screen {
   position: fixed; inset: 0; z-index: 5000;
-  background: #000;
   display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
-  gap: 32px;
+  align-items: center; justify-content: center; gap: 28px;
+  background:
+    radial-gradient(ellipse at 50% 40%, #2d1b69 0%, transparent 60%),
+    #0e0c1a;
 }
-#login-screen h1 {
-  font-family: var(--pixel);
-  font-size: clamp(18px,4vw,32px);
-  color: var(--screen-green);
-  text-shadow: 0 0 20px rgba(57,255,20,0.7), 0 0 60px rgba(57,255,20,0.3);
-  text-align: center;
-  letter-spacing: 0.08em;
-  animation: glow 2s ease-in-out infinite alternate;
-}
-@keyframes glow {
-  from { text-shadow: 0 0 10px rgba(57,255,20,0.5); }
-  to   { text-shadow: 0 0 30px rgba(57,255,20,0.9), 0 0 60px rgba(57,255,20,0.4); }
+#login-screen::before {
+  content: '';
+  position: absolute; inset: 0;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+  background-size: 16px 16px;
 }
 
-.boot-line {
-  font-family: var(--crt);
-  font-size: 20px;
-  color: var(--text-dim);
+.title-card {
+  background: var(--panel);
+  border-radius: 16px;
+  padding: 36px 48px;
   text-align: center;
+  position: relative;
+  box-shadow:
+    0 0 0 4px var(--panel-darker),
+    0 0 0 8px #3d2810,
+    8px 14px 0 8px rgba(0,0,0,0.6),
+    inset 0 2px 0 rgba(255,255,255,0.6);
 }
+.title-card h1 {
+  font-family: var(--font-display);
+  font-size: clamp(42px, 8vw, 72px);
+  color: var(--yellow);
+  letter-spacing: 0.06em;
+  text-shadow:
+    3px 3px 0 #7a4800,
+    6px 6px 0 rgba(0,0,0,0.25);
+  line-height: 1;
+  margin-bottom: 6px;
+}
+.title-card .tagline {
+  font-family: var(--font-display);
+  font-size: 13px;
+  color: var(--ink-soft);
+  letter-spacing: 0.1em;
+  margin-bottom: 24px;
+}
+
+/* Decorative stars */
+.title-card::before, .title-card::after {
+  content: '★';
+  position: absolute;
+  font-size: 20px;
+  color: var(--legendary);
+  top: 16px;
+}
+.title-card::before { left: 18px; }
+.title-card::after  { right: 18px; }
 
 #login-btn {
-  font-size: 9px;
-  padding: 14px 24px;
-  background: #000;
-  color: var(--screen-green);
-  border: 2px solid var(--screen-green);
-  box-shadow: 0 0 16px rgba(57,255,20,0.3), inset 0 0 16px rgba(57,255,20,0.05);
-  animation: blink 1.2s step-end infinite;
+  font-size: 14px;
+  padding: 14px 32px;
+  background: var(--red);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  box-shadow: 0 5px 0 #8a1020, inset 0 1px 0 rgba(255,255,255,0.25);
+  text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+  animation: pressBlink 1.4s ease-in-out infinite;
+}
+@keyframes pressBlink {
+  0%,100% { opacity:1; }
+  50%      { opacity:.65; }
 }
 #login-btn:hover {
-  background: var(--screen-green);
-  color: #000;
   animation: none;
-  box-shadow: 0 0 24px rgba(57,255,20,0.5);
+  filter: brightness(1.1);
+  transform: translateY(-2px);
+  box-shadow: 0 7px 0 #8a1020, inset 0 1px 0 rgba(255,255,255,0.25);
 }
+#login-btn:active { transform: translateY(4px); box-shadow: 0 1px 0 #8a1020; }
 
-/* =========================
-   SORT CONTROLS
-   ========================= */
-#sort-controls {
-  display: flex; align-items: center; gap: 6px;
-}
-#sort-controls label {
-  font-family: var(--pixel);
-  font-size: 7px;
-  color: var(--text-dim);
+.login-sub {
+  font-size: 13px;
+  font-weight: 700;
+  color: rgba(255,255,255,0.35);
+  letter-spacing: 0.1em;
   text-transform: uppercase;
 }
 
-/* =========================
-   RETRO SCROLLBAR
-   ========================= */
-::-webkit-scrollbar { width: 8px; height: 8px; }
-::-webkit-scrollbar-thumb { background: #333; border: 1px solid #555; }
-::-webkit-scrollbar-track { background: #0a0a0a; }
+/* =============================================
+   SCROLLBAR
+   ============================================= */
+::-webkit-scrollbar { width: 10px; }
+::-webkit-scrollbar-thumb {
+  background: var(--panel-darker);
+  border-radius: 5px;
+  border: 1px solid var(--panel-shadow);
+}
+::-webkit-scrollbar-track { background: var(--bg2); }
 
-/* =========================
+/* =============================================
    MOBILE
-   ========================= */
+   ============================================= */
 @media (max-width: 760px) {
-  #main-container { flex-direction: column; padding: 0 8px; }
+  #main-container { flex-direction: column; }
   #leaderboard { width: 100%; order: 2; }
-  #monster-grid { order: 1; }
-  #top-bar { flex-direction: column; align-items: flex-start; gap: 8px; }
+  #top-bar { flex-direction: column; align-items: flex-start; gap: 10px; }
+  .topbar-right { flex-wrap: wrap; }
 }
 
-/* ── Top-bar inner groups ── */
-.topbar-left  { display:flex; flex-direction:column; }
+.topbar-left  { display:flex; flex-direction:column; gap:2px; }
 .topbar-right { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+
+/* Sort label */
+.sort-label {
+  font-size: 12px; font-weight: 800;
+  color: var(--panel-dark);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
 </style>
 </head>
 <body>
 
-<div class="noise" aria-hidden="true"></div>
-
-<!-- BOOT / LOGIN SCREEN (shown when not logged in) -->
+<!-- LOGIN / TITLE SCREEN -->
 <div id="login-screen">
-  <h1>INTRAMON</h1>
-  <div class="boot-line">VERSION 1.0 — 64K RAM SYSTEM<br>READY<span class="blink">_</span></div>
-  <button id="login-btn">▶ LOGIN VIA 42</button>
-  <div class="boot-line" style="font-size:15px; margin-top:16px;">INSERT COIN TO CONTINUE</div>
+  <div class="title-card">
+    <h1>INTRAMON</h1>
+    <div class="tagline">COLLECT &bull; TRADE &bull; BATTLE</div>
+    <button id="login-btn">▶ Press Start — Login via 42</button>
+  </div>
+  <div class="login-sub">© 2025 &nbsp;·&nbsp; All Intramon Are Fictional</div>
 </div>
 
-<!-- TOP BAR (shown when logged in) -->
+<!-- TOP BAR -->
 <header id="top-bar" class="hidden">
   <div class="topbar-left">
-    <h1 style="font-family: var(--pixel); font-size:13px; color: var(--screen-green);
-               text-shadow: 0 0 12px rgba(57,255,20,.5); margin:0 0 2px; letter-spacing:.05em;">
-      INTRAMON
-    </h1>
-    <div id="username-display" style="font-family:var(--crt); font-size:17px; color:var(--text-dim);">&nbsp;</div>
+    <div id="game-title">INTRAMON</div>
+    <div id="username-display"></div>
   </div>
 
   <div class="topbar-right">
-    <button id="check-inbox-btn" class="btn-primary">INBOX</button>
+    <button id="check-inbox-btn" class="btn-primary">📬 Inbox</button>
 
     <div style="display:flex; gap:6px; align-items:center;">
-      <input id="claim-code-input" placeholder="ENTER CODE" style="width:130px;">
-      <button id="claim-code-btn" class="btn-primary">REDEEM</button>
+      <input id="claim-code-input" placeholder="Claim code…" style="width:130px;">
+      <button id="claim-code-btn" class="btn-secondary">Redeem</button>
     </div>
 
-    <div id="sort-controls">
-      <label for="sort-select">SORT</label>
+    <div id="sort-controls" style="display:flex; align-items:center; gap:6px;">
+      <span class="sort-label">Sort</span>
       <select id="sort-select">
-        <option value="name">NAME</option>
-        <option value="rarity">RARITY</option>
-        <option value="element">ELEMENT</option>
+        <option value="name">Name</option>
+        <option value="rarity">Rarity</option>
+        <option value="element">Element</option>
       </select>
-      <button id="sort-order-btn" class="btn-primary" title="Toggle order">▲</button>
+      <button id="sort-order-btn" class="btn-secondary" title="Toggle order">▲</button>
     </div>
 
     <div id="crystal-counter">
@@ -578,14 +727,18 @@ select option { background: #000; color: var(--screen-green); }
 </header>
 
 <main id="main-container">
+  <!-- Leaderboard -->
   <aside id="leaderboard">
-    <h3>— HIGH SCORES —</h3>
-    <ol id="leaderboard-list"></ol>
-    <div style="display:flex; justify-content:flex-end; margin-top:12px;">
-      <button id="leaderboard-refresh-btn" class="btn-primary">REFRESH</button>
+    <div class="rpg-panel">
+      <div class="rpg-panel-title">🏆 Top Trainers</div>
+      <div id="leaderboard-inner">
+        <ol id="leaderboard-list"></ol>
+        <button id="leaderboard-refresh-btn" class="btn-secondary" style="width:100%; margin-top:4px;">Refresh</button>
+      </div>
     </div>
   </aside>
 
+  <!-- Grid -->
   <section style="flex:1;">
     <div id="monster-grid"></div>
   </section>
@@ -594,22 +747,36 @@ select option { background: #000; color: var(--screen-green); }
 <!-- MONSTER MODAL -->
 <div id="monster-modal" class="modal" aria-hidden="true">
   <div class="modal-content">
-    <div class="modal-titlebar">
-      <span>MONSTER DATA</span>
-      <button class="close-btn">✕ CLOSE</button>
+    <div class="modal-header">
+      <span class="modal-header-title">Monster Info</span>
+      <button class="close-btn">✕ Close</button>
     </div>
     <div class="modal-body">
-      <img id="modal-img" src="" alt="Monster">
+      <div class="modal-art-box" id="modal-art-box">
+        <img id="modal-img" src="" alt="Monster">
+      </div>
       <h2 id="modal-name"></h2>
       <small id="modal-rarity"></small>
-      <div class="stat-grid">
-        <div class="stat-row"><span class="stat-label">HP</span><span class="stat-val" id="modal-hp"></span></div>
-        <div class="stat-row"><span class="stat-label">ATK</span><span class="stat-val" id="modal-attack"></span></div>
-        <div class="stat-row"><span class="stat-label">DEF</span><span class="stat-val" id="modal-defense"></span></div>
+      <div class="stat-list">
+        <div class="stat-row">
+          <span class="stat-label">HP</span>
+          <div class="stat-bar-wrap"><div class="stat-bar hp" id="modal-hp-bar" style="width:0%"></div></div>
+          <span class="stat-val" id="modal-hp"></span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">ATK</span>
+          <div class="stat-bar-wrap"><div class="stat-bar atk" id="modal-atk-bar" style="width:0%"></div></div>
+          <span class="stat-val" id="modal-attack"></span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">DEF</span>
+          <div class="stat-bar-wrap"><div class="stat-bar def" id="modal-def-bar" style="width:0%"></div></div>
+          <span class="stat-val" id="modal-defense"></span>
+        </div>
       </div>
     </div>
-    <div class="modal-actions">
-      <button id="gift-btn" class="btn-primary">GIFT TO PLAYER</button>
+    <div class="modal-footer">
+      <button id="gift-btn" class="btn-primary">🎁 Gift to Player</button>
     </div>
   </div>
 </div>
@@ -617,27 +784,29 @@ select option { background: #000; color: var(--screen-green); }
 <!-- INBOX MODAL -->
 <div id="inbox-modal" class="modal" aria-hidden="true">
   <div class="modal-content">
-    <div class="modal-titlebar">
-      <span>INCOMING TRANSFER</span>
-      <button class="close-btn">✕ CLOSE</button>
+    <div class="modal-header">
+      <span class="modal-header-title">📬 Incoming!</span>
+      <button class="close-btn">✕ Close</button>
     </div>
     <div class="modal-body">
-      <h3 id="inbox-reason"></h3>
-      <img id="inbox-img" src="" alt="Inbox Monster">
+      <p id="inbox-reason"></p>
+      <div class="modal-art-box">
+        <img id="inbox-img" src="" alt="Monster">
+      </div>
       <h2 id="inbox-name"></h2>
       <small id="inbox-rarity"></small>
       <span id="inbox-count"></span>
     </div>
-    <div class="modal-actions">
-      <button id="claim-btn" class="btn-primary">CLAIM</button>
-      <button id="claim-all-btn" class="btn-primary">CLAIM ALL</button>
+    <div class="modal-footer">
+      <button id="claim-btn" class="btn-primary">✔ Claim</button>
+      <button id="claim-all-btn" class="btn-secondary">Claim All</button>
     </div>
   </div>
 </div>
 
 <script>
 /* =========================
-   STATE & CONSTANTS
+   STATE
    ========================= */
 const state = {
   monsters: [],
@@ -647,17 +816,26 @@ const state = {
 };
 
 const elementColors = {
-  Electro:'#FFD700', Water:'#00e5ff', Fire:'#FF4500',
-  Ice:'#00FFFF', Plant:'#39ff14', Ground:'#cd853f'
+  Electro:'#c8a800', Water:'#1a6aaa', Fire:'#cc4400',
+  Ice:'#1a8a9a', Plant:'#2a7a3a', Ground:'#8a5820'
 };
 
 function getRarityColor(r) {
   switch((r||'').toLowerCase()) {
-    case 'common':    return '#39ff14';
-    case 'rare':      return '#00e5ff';
-    case 'epic':      return '#ff00aa';
-    case 'legendary': return '#ffb300';
-    default:          return '#555';
+    case 'common':    return '#2d8a2d';
+    case 'rare':      return '#1a6aaa';
+    case 'epic':      return '#8820aa';
+    case 'legendary': return '#c07000';
+    default:          return '#666';
+  }
+}
+function getRarityLabel(r) {
+  switch((r||'').toLowerCase()) {
+    case 'common':    return '◆ Common';
+    case 'rare':      return '◆◆ Rare';
+    case 'epic':      return '◆◆◆ Epic';
+    case 'legendary': return '★ Legendary';
+    default:          return r;
   }
 }
 
@@ -669,22 +847,43 @@ const monsterModalEl = document.getElementById('monster-modal');
 function openMonsterModal(m) {
   document.getElementById('modal-img').src = m.image || '/monsters/placeholder.png';
   document.getElementById('modal-name').textContent = m.name;
-  document.getElementById('modal-rarity').textContent = '★ ' + m.rarity.toUpperCase() + ' ★';
+  document.getElementById('modal-rarity').textContent = getRarityLabel(m.rarity);
   document.getElementById('modal-rarity').style.color = getRarityColor(m.rarity);
   document.getElementById('modal-hp').textContent = m.hp;
   document.getElementById('modal-attack').textContent = m.attack;
   document.getElementById('modal-defense').textContent = m.defense;
+
+  // Animate stat bars (assume max ~250)
+  const max = 250;
+  setTimeout(() => {
+    document.getElementById('modal-hp-bar').style.width  = Math.min(100, (m.hp  /max)*100)+'%';
+    document.getElementById('modal-atk-bar').style.width = Math.min(100, (m.attack/max)*100)+'%';
+    document.getElementById('modal-def-bar').style.width = Math.min(100, (m.defense/max)*100)+'%';
+  }, 60);
+
+  // Art box bg by element
+  const artBox = document.getElementById('modal-art-box');
+  const gradients = {
+    Electro:'linear-gradient(160deg,#fff8c0,#f0e060)',
+    Water:'linear-gradient(160deg,#c8eeff,#a0d0f0)',
+    Fire:'linear-gradient(160deg,#ffe0c0,#ffb080)',
+    Ice:'linear-gradient(160deg,#d8f4f8,#b0e0e8)',
+    Plant:'linear-gradient(160deg,#d0f0d0,#98d898)',
+    Ground:'linear-gradient(160deg,#f0e0c0,#d0a868)'
+  };
+  artBox.style.background = gradients[m.element] || 'linear-gradient(160deg,#e8ddc8,#d0c8b0)';
+
+  monsterModalEl.querySelector('.modal-header').style.borderBottom =
+    `3px solid ${getRarityColor(m.rarity)}`;
   monsterModalEl.classList.add('show');
   document.getElementById('gift-btn').onclick = () => giftMonster(m);
-  monsterModalEl.querySelector('.modal-titlebar').style.borderTopColor = getRarityColor(m.rarity);
-  monsterModalEl.querySelector('.modal-content').style.borderTopColor = getRarityColor(m.rarity);
 }
 function closeMonsterModal() { monsterModalEl.classList.remove('show'); }
 monsterModalEl.querySelector('.close-btn').addEventListener('click', closeMonsterModal);
-monsterModalEl.addEventListener('click', e => { if (e.target === monsterModalEl) closeMonsterModal(); });
+monsterModalEl.addEventListener('click', e => { if(e.target===monsterModalEl) closeMonsterModal(); });
 
 /* =========================
-   RENDER MONSTERS
+   RENDER
    ========================= */
 function renderMonsters(monsters) {
   const grid = document.getElementById('monster-grid');
@@ -693,43 +892,42 @@ function renderMonsters(monsters) {
   const sorted = [...monsters].sort((a, b) => {
     const dir = state.currentSort.ascending ? 1 : -1;
     if (state.currentSort.key === 'rarity') {
-      const order = ['common','rare','epic','legendary'];
-      return (order.indexOf(a.rarity.toLowerCase()) - order.indexOf(b.rarity.toLowerCase())) * dir;
+      const ord = ['common','rare','epic','legendary'];
+      return (ord.indexOf(a.rarity.toLowerCase()) - ord.indexOf(b.rarity.toLowerCase())) * dir;
     }
     if (state.currentSort.key === 'element') {
-      if (a.element === b.element) return a.name.localeCompare(b.name) * dir;
-      return a.element.localeCompare(b.element) * dir;
+      if (a.element===b.element) return a.name.localeCompare(b.name)*dir;
+      return a.element.localeCompare(b.element)*dir;
     }
-    return a.name.localeCompare(b.name) * dir;
+    return a.name.localeCompare(b.name)*dir;
   });
 
   sorted.forEach((m, idx) => {
+    const rarity = (m.rarity||'common').toLowerCase();
     const card = document.createElement('div');
     card.className = 'monster-card';
-    card.setAttribute('data-rarity', (m.rarity || '').toLowerCase());
-
-    const elemColor = elementColors[m.element] || '#777';
+    card.setAttribute('data-rarity', rarity);
+    card.setAttribute('data-element', m.element||'');
 
     card.innerHTML = `
-      <div class="card-header">
-        <span>${m.element || '???'}</span>
-        <span>★${(m.rarity||'').toUpperCase().charAt(0)}</span>
+      <div class="card-banner">
+        <span class="card-banner-name">${m.name}</span>
+        <span class="card-hp-badge">HP ${m.hp}</span>
       </div>
-      <div class="card-img-wrap">
-        <img src="${m.image || '/monsters/placeholder.png'}"
+      <div class="card-art">
+        <img src="${m.image||'/monsters/placeholder.png'}"
              alt="${m.name}"
              onerror="this.onerror=null;this.src='/monsters/placeholder.png';">
       </div>
-      <div class="card-footer">
-        <div class="card-name">${m.name}</div>
-        <div class="card-element" style="color:${elemColor}">${m.element || '???'}</div>
+      <div class="card-info">
+        <span class="card-rarity-pip">${{common:'◆',rare:'◆◆',epic:'◆◆◆',legendary:'★'}[rarity]||'◆'}</span>
+        <span class="card-type-pill">${m.element||'???'}</span>
       </div>
     `;
 
     card.addEventListener('click', () => openMonsterModal(m));
-    card.style.animationDelay = `${idx * 40}ms`;
-    setTimeout(() => card.setAttribute('data-loaded', 'true'), 10);
-
+    card.style.animationDelay = `${idx * 45}ms`;
+    setTimeout(() => card.setAttribute('data-loaded','true'), 10);
     grid.appendChild(card);
   });
 }
@@ -742,53 +940,41 @@ async function fetchMonsters() {
     const res = await fetch('/my-monsters');
     if (!res.ok) return;
     const data = await res.json();
-    state.monsters = data.monsters || [];
+    state.monsters = data.monsters||[];
     updateUserUI(data);
     renderMonsters(state.monsters);
   } catch(err) { console.error(err); }
 }
 
 /* =========================
-   USER / COALITION UI
+   USER UI
    ========================= */
 function updateUserUI(data) {
   document.getElementById('username-display').textContent =
-    `> ${data.name}  [${data.coalitionName || 'UNKNOWN'}]`;
-  document.getElementById('crystal-amount').textContent = data.crystals ?? 0;
-
-  const col = data.coalitionColor || '#39ff14';
+    `Trainer: ${data.name}  ·  ${data.coalitionName||'—'}`;
+  document.getElementById('crystal-amount').textContent = data.crystals??0;
+  const col = data.coalitionColor || '#e63946';
   applyCoalitionTheme(col);
-  ['check-inbox-btn','claim-code-btn','sort-order-btn','leaderboard-refresh-btn'].forEach(id => {
-    const btn = document.getElementById(id);
-    if (btn) {
-      btn.style.background = col;
-      btn.style.borderColor = hexDarken(col, 0.6);
-      btn.style.boxShadow = `3px 3px 0 ${hexDarken(col, 0.6)}`;
-    }
-  });
 }
 
 function applyCoalitionTheme(hex) {
-  const rgb = hexToRgb(hex);
-  document.documentElement.style.setProperty('--screen-green', hex);
-  document.documentElement.style.setProperty('--screen-dim', hexDarken(hex, 0.6));
-  document.querySelector('#top-bar').style.borderTopColor = hex;
-  document.querySelector('#leaderboard').style.borderTopColor = hex;
+  const dark = hexDarken(hex, 0.55);
+  document.documentElement.style.setProperty('--red', hex);
+  document.getElementById('top-bar').style.borderBottom = `4px solid ${hex}`;
+  ['check-inbox-btn','claim-code-btn','sort-order-btn','leaderboard-refresh-btn'].forEach(id => {
+    const btn = document.getElementById(id);
+    if (!btn) return;
+    btn.style.background = hex;
+    btn.style.boxShadow = `0 4px 0 ${dark}, inset 0 1px 0 rgba(255,255,255,0.25)`;
+    btn.style.border = `1px solid ${dark}`;
+  });
 }
 
-function hexToRgb(h) {
-  let hex = (h||'#39ff14').replace('#','');
-  if (hex.length===3) hex = hex.split('').map(c=>c+c).join('');
-  const n = parseInt(hex,16);
-  return `${(n>>16)&255},${(n>>8)&255},${n&255}`;
-}
-function hexDarken(hex, factor) {
-  let h = hex.replace('#','');
-  if(h.length===3) h=h.split('').map(c=>c+c).join('');
-  const n = parseInt(h,16);
-  const r = Math.round(((n>>16)&255)*factor);
-  const g = Math.round(((n>>8)&255)*factor);
-  const b = Math.round((n&255)*factor);
+function hexDarken(hex,f){
+  let h=(hex||'#e63946').replace('#','');
+  if(h.length===3)h=h.split('').map(c=>c+c).join('');
+  const n=parseInt(h,16);
+  const r=Math.round(((n>>16)&255)*f),g=Math.round(((n>>8)&255)*f),b=Math.round((n&255)*f);
   return `rgb(${r},${g},${b})`;
 }
 
@@ -802,77 +988,75 @@ async function fetchLeaderboard() {
     const data = await res.json();
     const list = document.getElementById('leaderboard-list');
     list.innerHTML = '';
-    data.leaderboard.forEach((p, i) => {
+    data.leaderboard.forEach((p,i) => {
       const li = document.createElement('li');
-      const medal = ['🥇','🥈','🥉'][i] || `${i+1}.`;
-      li.textContent = `${medal} ${p.name} — ${p.monsterCount}`;
+      const medals = ['🥇','🥈','🥉'];
+      li.innerHTML = `<span class="rank">${medals[i]||`${i+1}.`}</span>${p.name} <span style="color:var(--ink-muted);margin-left:auto;font-size:12px;">${p.monsterCount}🃏</span>`;
       list.appendChild(li);
     });
   } catch(err) { console.error(err); }
 }
 
 /* =========================
-   GIFT MONSTER
+   GIFT
    ========================= */
 async function giftMonster(monster) {
-  const to = prompt('ENTER RECEIVER USERNAME:');
+  const to = prompt('Enter receiver username:');
   if (!to) return;
   try {
     const uRes = await fetch(`/find-user/${to}`);
     const uData = await uRes.json();
-    if (!uData.exists) { alert('USER NOT FOUND'); return; }
-    const res = await fetch('/gift', {
+    if (!uData.exists) { alert('User not found!'); return; }
+    const res = await fetch('/gift',{
       method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ toPlayerId: uData.playerId, offeredMonsters: [monster] })
+      body:JSON.stringify({toPlayerId:uData.playerId,offeredMonsters:[monster]})
     });
     const result = await res.json();
-    if (res.ok) { alert('MONSTER SENT TO INBOX!'); closeMonsterModal(); fetchMonsters(); }
-    else alert('GIFT FAILED: ' + (result.error||'UNKNOWN ERROR'));
-  } catch(err) { alert('GIFT FAILED: '+err.message); }
+    if (res.ok) { alert('Monster sent!'); closeMonsterModal(); fetchMonsters(); }
+    else alert('Gift failed: '+(result.error||'Unknown'));
+  } catch(err) { alert('Gift failed: '+err.message); }
 }
 
 /* =========================
-   INBOX MODAL
+   INBOX
    ========================= */
 const inboxModalEl = document.getElementById('inbox-modal');
 const inboxEls = {
-  reason: document.getElementById('inbox-reason'),
-  img: document.getElementById('inbox-img'),
-  name: document.getElementById('inbox-name'),
-  rarity: document.getElementById('inbox-rarity'),
+  reason:   document.getElementById('inbox-reason'),
+  img:      document.getElementById('inbox-img'),
+  name:     document.getElementById('inbox-name'),
+  rarity:   document.getElementById('inbox-rarity'),
   claimBtn: document.getElementById('claim-btn'),
-  count: document.getElementById('inbox-count')
+  count:    document.getElementById('inbox-count')
 };
 
 async function checkInbox() {
   try {
     const res = await fetch('/my-inbox');
     const data = await res.json();
-    if (!data.inbox.length) { alert('INBOX EMPTY'); return; }
-    state.inboxQueue = data.inbox;
-    state.inboxIndex = 0;
-    updateInboxCount();
-    showInbox(0);
+    if (!data.inbox.length) { alert('Your inbox is empty!'); return; }
+    state.inboxQueue = data.inbox; state.inboxIndex = 0;
+    updateInboxCount(); showInbox(0);
   } catch(err) { alert(err.message); }
 }
 
 function updateInboxCount() {
   const cnt = state.inboxQueue.length - state.inboxIndex;
-  inboxEls.count.textContent = `[ ${cnt} MONSTER${cnt!==1?'S':''} PENDING ]`;
+  inboxEls.count.textContent = `${cnt} monster${cnt!==1?'s':''} waiting`;
 }
 
 function showInbox(i) {
   if (i >= state.inboxQueue.length) {
     inboxModalEl.classList.remove('show');
-    state.inboxQueue = []; state.inboxIndex = 0;
+    state.inboxQueue=[]; state.inboxIndex=0;
     fetchMonsters(); return;
   }
   const mon = state.inboxQueue[i];
-  inboxEls.reason.textContent = `// REASON: ${mon.reason.toUpperCase()}`;
+  inboxEls.reason.textContent = `Reason: ${mon.reason.charAt(0).toUpperCase()+mon.reason.slice(1)}`;
   inboxEls.name.textContent = mon.name;
-  inboxEls.rarity.textContent = '★ ' + mon.rarity.toUpperCase() + ' ★';
+  inboxEls.rarity.textContent = getRarityLabel(mon.rarity);
   inboxEls.rarity.style.color = getRarityColor(mon.rarity);
-  inboxEls.img.src = mon.image || '/monsters/placeholder.png';
+  inboxEls.img.src = mon.image||'/monsters/placeholder.png';
   inboxModalEl.classList.add('show');
   inboxEls.claimBtn.onclick = () => claimMonster(mon.instanceId);
   updateInboxCount();
@@ -880,32 +1064,30 @@ function showInbox(i) {
 
 async function claimMonster(id) {
   try {
-    const res = await fetch(`/claim/${id}`, { method:'POST' });
-    if (!res.ok) throw new Error('CLAIM FAILED');
-    state.inboxIndex++;
-    showInbox(state.inboxIndex);
+    const res = await fetch(`/claim/${id}`,{method:'POST'});
+    if (!res.ok) throw new Error('Claim failed');
+    state.inboxIndex++; showInbox(state.inboxIndex);
   } catch(err) { alert(err.message); }
 }
 
 document.getElementById('check-inbox-btn').addEventListener('click', checkInbox);
 document.getElementById('claim-all-btn').addEventListener('click', async () => {
   try {
-    const res = await fetch('/claim-all', { method:'POST' });
+    const res = await fetch('/claim-all',{method:'POST'});
     const data = await res.json();
     if (res.ok) {
       alert(data.message);
       state.inboxQueue=[]; state.inboxIndex=0;
       inboxModalEl.classList.remove('show');
       fetchMonsters();
-    } else alert(data.error||'FAILED TO CLAIM ALL');
-  } catch { alert('ERROR CLAIMING ALL'); }
+    } else alert(data.error||'Failed to claim all');
+  } catch { alert('Error claiming all'); }
 });
-
-inboxModalEl.querySelector('.close-btn').addEventListener('click', () => inboxModalEl.classList.remove('show'));
-inboxModalEl.addEventListener('click', e => { if(e.target===inboxModalEl) inboxModalEl.classList.remove('show'); });
+inboxModalEl.querySelector('.close-btn').addEventListener('click', ()=>inboxModalEl.classList.remove('show'));
+inboxModalEl.addEventListener('click', e=>{ if(e.target===inboxModalEl) inboxModalEl.classList.remove('show'); });
 
 /* =========================
-   SORT CONTROLS
+   SORT
    ========================= */
 document.getElementById('sort-select').addEventListener('change', e => {
   state.currentSort.key = e.target.value;
@@ -922,30 +1104,24 @@ document.getElementById('sort-order-btn').addEventListener('click', () => {
    ========================= */
 document.getElementById('claim-code-btn').addEventListener('click', async () => {
   const code = document.getElementById('claim-code-input').value.trim();
-  if (!code) return alert('ENTER A CODE!');
+  if (!code) return alert('Enter a code!');
   try {
-    const res = await fetch('/claim-code', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ code })
+    const res = await fetch('/claim-code',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({code})
     });
     const data = await res.json();
-    if (res.ok) {
-      alert(`RECEIVED: ${data.monster.name}! CHECK INBOX!`);
-      document.getElementById('claim-code-input').value = '';
-    } else alert(data.error || 'INVALID CODE');
-  } catch { alert('ERROR REDEEMING CODE'); }
+    if (res.ok) { alert(`You received ${data.monster.name}! Check your inbox!`); document.getElementById('claim-code-input').value=''; }
+    else alert(data.error||'Invalid code');
+  } catch { alert('Error redeeming code'); }
 });
 
-/* =========================
-   LEADERBOARD REFRESH
-   ========================= */
 document.getElementById('leaderboard-refresh-btn').addEventListener('click', fetchLeaderboard);
+document.getElementById('login-btn').addEventListener('click', ()=>window.location.href='/login');
 
 /* =========================
-   LOGIN / INIT
+   INIT
    ========================= */
-document.getElementById('login-btn').addEventListener('click', () => window.location.href = '/login');
-
 (async function init() {
   try {
     const res = await fetch('/my-monsters');
@@ -959,13 +1135,13 @@ document.getElementById('login-btn').addEventListener('click', () => window.loca
         if (logRes.ok) {
           const logData = await logRes.json();
           if (logData.rewardGranted) {
-            alert(`REWARD UNLOCKED! ${logData.hours}H LOGGED TODAY!`);
+            alert(`You earned a reward for logging ${logData.hours} hours today!`);
             await checkInbox();
           }
         }
-      } catch(err) { console.error(err); }
+      } catch {}
     }
-  } catch { /* not logged in — boot screen stays */ }
+  } catch { /* not logged in */ }
 })();
 </script>
 </body>
